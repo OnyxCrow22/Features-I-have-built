@@ -29,9 +29,9 @@ def check_steam_prices():
         url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&cc=gb"
         response = requests.get(url).json()
 
-        app_data = response.get(app_id, {}.get)
-        if app_data.get("success"):
-            data = response[app_id]["data"]
+        app_data = response.get(app_id, {})
+        if app_data.get("success") and "data" in app_data:
+            data = app_data["data"]
             price_info = data.get("price_overview")
 
             if price_info and price_info["discount_percent"] > 0:
