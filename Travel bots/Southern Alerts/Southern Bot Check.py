@@ -1,6 +1,5 @@
 import time
 import requests
-# FIXED: Proper lowercase imports from datetime
 from datetime import datetime, timedelta
 
 # The link for the bot to feed into.
@@ -17,7 +16,6 @@ ALREADY_SENT = {}
 
 # Clear trains older than two hours
 def clean_memory():
-    # FIXED: Lowercase datetime
     now = datetime.now()
     cutoff = now - timedelta(hours=2)
 
@@ -77,6 +75,7 @@ def check_trains():
                 
                 ALREADY_SENT[service_id] = now
                 print(f"Cancellation alert sent for {scheduled} train ({route_name})")
+                time.sleep(15)
                 continue
 
             # Only interested in trains delayed by five minutes or more
@@ -99,6 +98,7 @@ def check_trains():
 
                         ALREADY_SENT[service_id] = now
                         print(f"Alert sent for {scheduled} train - {delay_amount} mins late ({route_name})")
+                        time.sleep(15)
 
                 # No time displayed?
                 except:
