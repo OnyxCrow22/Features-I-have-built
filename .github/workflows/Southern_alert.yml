@@ -23,7 +23,7 @@ jobs:
       - name: Run Hub Modules
         # You can add as many modules here as you want
         run: |
-          python modules/steam_tracker.py
+          python modules/steam_price_tracker.py
           python modules/Southern Bot Check.py
         env:
            TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
