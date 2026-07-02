@@ -7,15 +7,17 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
-WISHLIST_FILE = "wishlist.txt"
-
 # Checks for the Steam prices inside of the wishlist.txt file
 def check_steam_prices():
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    file_path = os.path.join(script_dir, "wishlist.txt")
     
     sales_report = [] # New list for listing everything on sale
 
     try:
-        with open(WISHLIST_FILE, "r") as f:
+        with open(file_path, "r") as f:
             app_ids = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
         return
