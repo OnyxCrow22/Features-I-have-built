@@ -26,4 +26,5 @@ jobs:
           python modules/steam_tracker.py
           python modules/Southern Bot Check.py
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
+           GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
