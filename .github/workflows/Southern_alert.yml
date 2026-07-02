@@ -29,7 +29,7 @@ jobs:
 
       # 2. Run your updated Python script
       - name: Run Train Monitor Script
-        run: python "Travel bots/Southern Bot Check.py"
+        run: python "Travel bots/Southern Alerts/Southern Bot Check.py"
 
       # 3. Save the updated memory file back to the cache
       - name: Save train status cache
