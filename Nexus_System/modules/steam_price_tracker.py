@@ -39,7 +39,7 @@ def check_steam_prices():
 
     if sales_report:
         nexus_message = f"Steam Sales Alert:\n" + "\n".join(sales_report)
-        send_discord_alert("gaming", nexus_message)
+        send_discord_alert("gaming_price", nexus_message)
 
 if __name__ == "__main__":
     check_steam_prices()
