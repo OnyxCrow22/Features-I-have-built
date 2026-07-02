@@ -1,12 +1,14 @@
 import os
 import time
+import sys
 import requests
 from datetime import datetime, timedelta
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
 # --- Configuration & Memory ---
 MEMORY_FILE = "status_memory.txt"
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1522249965559349459/-0T8gQFHHIpMPyskyJGrIiKsLSr8XNLYZFLXA90nvE4Q8hM52ahsl7wlf36crvvzJ9tq"
 
 # Read the previous state from cache memory
 previous_status = "On Time" 
@@ -87,7 +89,7 @@ def check_trains():
             # 1. Alert if status changed (Professional "All-Clear" tracker)
             if current_status != previous_status:
                 msg = f"🔔 Status for {scheduled} changed from '{previous_status}' to '{current_status}'"
-                send_discord_alert(DISCORD_WEBHOOK_URL, msg)
+                send_discord_alert("trains", msg)
                 # Update memory
                 with open(MEMORY_FILE, "w") as f:
                     f.write(current_status)
@@ -103,7 +105,7 @@ def check_trains():
                 message = (f"**Southern Cancelled Train!!**\n"
                            f"The **{scheduled}** Southern service ({route_name}) has been **cancelled**.\n"
                            f"💬 **Reason:** {cancel_reason}")
-                send_discord_alert(DISCORD_WEBHOOK_URL, message)
+                send_discord_alert("trains", message)
                 
                 ALREADY_SENT[service_id] = now
                 print(f"Cancellation alert sent for {scheduled} train ({route_name})")
@@ -118,7 +120,7 @@ def check_trains():
                            f"💬 **Reason:** {delay_reason}")
                 
                 # Send to Discord
-                send_discord_alert(DISCORD_WEBHOOK_URL, message)
+                send_discord_alert("trains", message)
 
                 ALREADY_SENT[service_id] = now
                 print(f"Alert sent for {scheduled} train - {delay_amount} mins late ({route_name})")
