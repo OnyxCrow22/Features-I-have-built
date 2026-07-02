@@ -1,39 +1,29 @@
-name: Southern Rail Monitor
-
+name: Nexus Hub Program
 on:
   schedule:
-    - cron: '*/5 4-20 * * *' # Runs every 5 mins from 4 AM to 8 PM
-  workflow_dispatch:          # Allows you to click "Run workflow" manually
+    # Run every 5 minutes (the '*/5' means every 5th minute)
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # This allows you to press a "Run" button in GitHub!
 
 jobs:
-  check-trains:
+  run-hub:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Restore the memory file from GitHub's cache
-      - name: Restore train status cache
-        uses: actions/cache@v4
-        with:
-          path: status_memory.txt
-          key: train-status-cache
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: pip install requests
 
-      # 2. Run your updated Python script
-      - name: Run Train Monitor Script
-        run: python "Nexus_System/modules/Southern Bot Check.py"
-
-      # 3. Save the updated memory file back to the cache
-      - name: Save train status cache
-        uses: actions/cache/save@v4
-        with:
-          path: status_memory.txt
-          key: train-status-cache
+      - name: Run Hub Modules
+        # You can add as many modules here as you want
+        run: |
+          python modules/steam_tracker.py
+          python modules/Southern Bot Check.py
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
