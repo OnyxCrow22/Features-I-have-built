@@ -2,27 +2,38 @@ name: Southern Rail Monitor
 
 on:
   schedule:
-    # Runs every 5 minutes, between 04:00 UTC and 19:55 UTC (approx. 4 AM to 8 PM)
-    - cron: '*/5 4-19 * * *'
-  workflow_dispatch:
+    - cron: '*/5 4-20 * * *' # Runs every 5 mins from 4 AM to 8 PM
+  workflow_dispatch:          # Allows you to click "Run workflow" manually
 
 jobs:
   check-trains:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout Repository Code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      # 1. Restore the memory file from GitHub's cache
+      - name: Restore train status cache
+        uses: actions/cache@v4
+        with:
+          path: status_memory.txt
+          key: train-status-cache
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install requests
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    - name: Run Train Monitor Script
-      run: python "Travel bots/Southern Alerts/Southern Bot Check.py"
+      - name: Install dependencies
+        run: pip install requests
+
+      # 2. Run your updated Python script
+      - name: Run Train Monitor Script
+        run: python "Travel bots/Southern Bot Check.py"
+
+      # 3. Save the updated memory file back to the cache
+      - name: Save train status cache
+        uses: actions/cache/save@v4
+        with:
+          path: status_memory.txt
+          key: train-status-cache
