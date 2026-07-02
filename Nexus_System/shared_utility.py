@@ -6,7 +6,7 @@ def send_discord_alert(category, message):
     url = os.environ.get(env_key)
 
     if not url:
-        print("Error: Could not find file.")
+        print(f"Error: Could not find the environment variable {env_key}. Please set it!.")
         return
     
     payload = {"content": message}

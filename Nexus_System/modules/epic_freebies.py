@@ -1,5 +1,8 @@
 import os
 import requests
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
 def check_epic_freebies():
