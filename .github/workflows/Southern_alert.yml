@@ -26,6 +26,8 @@ jobs:
           python Nexus_System/modules/steam_price_tracker.py
           python "Nexus_System/modules/Southern Bot Check.py"
           python Nexus_System/modules/epic_freebies.py
+          python Nexus_System/modules/bbc_news_fetcher.py
         env:
            TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
            GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
+           NEWS_WEBOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
