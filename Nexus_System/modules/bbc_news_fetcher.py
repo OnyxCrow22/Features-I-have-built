@@ -1,5 +1,6 @@
 import requests
 import os
+import time
 import xml.etree.ElementTree as ET
 import sys
 
@@ -11,16 +12,14 @@ def check_headlines():
     CACHED_FILE = os.path.join(script_dir, "news_cache.txt")
 
     # Get the BBC News UK Top Stories RSS Feed
-    rss_url = "https://feeds.bbci.co.uk/news/rss.xml"
+    NEWS_SOURCE = {
+        "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
+        "Sky News": "https://news.sky.com/feeds/rss/home.xml",
+        "Daily Mail": "https://www.dailymail.com/home/index.rss",
+        "The Guardian": "https://www.theguardian.com/uk/rss"
+    }
 
     try:
-        responses = requests.get(rss_url, timeout=10)
-        if responses.status_code != 200:
-            print("FAILED to fetch the BBC News RSS Feed")
-            return
-        
-        root = ET.fromstring(responses.content) # Turn the content into a string
-
         if (os.path.exists(CACHED_FILE)):
             with open(CACHED_FILE, "r") as f:
                 seen_links = [line.strip() for line in f if line.strip()]
@@ -31,20 +30,37 @@ def check_headlines():
         current_links = [] # Create a new current link list
         new_stories = [] # Create a new stories list
 
-        for item in root.findall(".//item")[:5]:
-            title = item.find("title").text
-            link = item.find("link").text
-            description = item.find("description").text
+        for source_name, rss_url in NEWS_SOURCE.items():
+            print(f"Checking {source_name}")
+            try:
+                responses = requests.get(rss_url, timeout=10)
+                if responses.status_codes != 200:
+                    print(f"FAILED to fetch feed from {source_name}'s RSS Feed!")
+                    continue
+                root = ET.fromstring(responses.content)
 
-            current_links.append(link)
 
-            if link not in seen_links:
-                formatted_story = f"**{title}**\n>{description}\n{link}"
-                new_stories.append(formatted_story)
+                for item in root.findall(".//item")[:5]:
+                    title = item.find("title").text
+                    link = item.find("link").text
+                    description = item.find("description").text
+
+                    current_links.append(link)
+
+                if link not in seen_links:
+                    formatted_story = f"**{title}**\n>{description}\n{link}"
+                    new_stories.append(formatted_story)
+
+            except Exception as e:
+                print(f"FAILURE in fetching RSS feed!: {e}")
+            continue
 
         if new_stories:
-            for story in reversed(new_stories):
+            for i, story in enumerate(new_stories):
                 send_discord_alert("news", story)
+
+                if (i < len(new_stories) - 1):
+                    time.sleep(25)
 
         else:
             print(f"No headlines found!")
@@ -53,7 +69,7 @@ def check_headlines():
             f.write("\n".join(current_links))
 
     except Exception as e:
-        print(f"ERROR fetching news from BBC News!: {e}")
+        print(f"ERROR fetching news from {source_name}!: {e}")
 
 if __name__ == "__main__":
     print("Checking for breaking news...")
