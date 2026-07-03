@@ -2,6 +2,8 @@ import requests
 import os
 import time
 import xml.etree.ElementTree as ET
+import email.utils
+from datetime import datetime, timedelta, timezone
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,17 +39,31 @@ def check_headlines():
                 if responses.status_code != 200:
                     print(f"FAILED to fetch feed from {source_name}'s RSS Feed!")
                     continue
+
                 root = ET.fromstring(responses.content)
+                now = datetime.now(timezone.utc)
 
 
-                for item in root.findall(".//item")[:1]:
-                    title = item.find("title").text
-                    link = item.find("link").text
-                    description = item.find("description").text
+                for item in root.findall(".//item")[:10]:
+                    title = item.find("title").text if item.find("title") is not None else "No Title"
+                    link = item.find("link").text if item.find("link") is not None else ""
+                    description = item.find("description").text if item.find("description") is not None else ""
+                    pub_date_text = item.find("pubDate").text if item.find("pubDate") is not None else None
 
-                    current_links.append(link)
+                    if link:
+                        current_links.append(link)
 
                     if link not in seen_links:
+                        is_recent = True
+                        if pub_date_text:
+                            try:
+                                pub_date_text = email.utils.parsedate_to_datetime(pub_date_text)
+                                if now - pub_date_text > timedelta(minutes=15):
+                                    is_recent = False
+                            except Exception:
+                                pass
+
+                    if is_recent:
                         formatted_story = f"**{title}**\n>{description}\n{link}"
                         new_stories.append(formatted_story)
 
