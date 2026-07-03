@@ -15,13 +15,13 @@ def check_headlines():
     NEWS_SOURCE = {
         "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
         "Sky News": "https://news.sky.com/feeds/rss/home.xml",
-        "Daily Mail": "https://www.dailymail.com/home/index.rss",
+        "Daily Mail": "https://www.dailymail.co.uk/home/index.rss",
         "The Guardian": "https://www.theguardian.com/uk/rss"
     }
 
     try:
         if (os.path.exists(CACHED_FILE)):
-            with open(CACHED_FILE, "r") as f:
+            with open(CACHED_FILE, "r", encoding = "utf-8") as f:
                 seen_links = [line.strip() for line in f if line.strip()]
 
         else:
@@ -34,7 +34,7 @@ def check_headlines():
             print(f"Checking {source_name}")
             try:
                 responses = requests.get(rss_url, timeout=10)
-                if responses.status_codes != 200:
+                if responses.status_code != 200:
                     print(f"FAILED to fetch feed from {source_name}'s RSS Feed!")
                     continue
                 root = ET.fromstring(responses.content)
@@ -47,9 +47,9 @@ def check_headlines():
 
                     current_links.append(link)
 
-                if link not in seen_links:
-                    formatted_story = f"**{title}**\n>{description}\n{link}"
-                    new_stories.append(formatted_story)
+                    if link not in seen_links:
+                        formatted_story = f"**{title}**\n>{description}\n{link}"
+                        new_stories.append(formatted_story)
 
             except Exception as e:
                 print(f"FAILURE in fetching RSS feed!: {e}")
