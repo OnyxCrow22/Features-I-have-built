@@ -60,7 +60,7 @@ def check_headlines():
                 send_discord_alert("news", story)
 
                 if (i < len(new_stories) - 1):
-                    time.sleep(25)
+                    time.sleep(5)
 
         else:
             print(f"No headlines found!")
