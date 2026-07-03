@@ -1,6 +1,9 @@
 import requests
 import os
 import xml.etree.ElementTree as ET
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
 def check_headlines():
