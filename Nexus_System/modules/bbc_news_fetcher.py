@@ -40,7 +40,7 @@ def check_headlines():
                 root = ET.fromstring(responses.content)
 
 
-                for item in root.findall(".//item")[:5]:
+                for item in root.findall(".//item")[:1]:
                     title = item.find("title").text
                     link = item.find("link").text
                     description = item.find("description").text
