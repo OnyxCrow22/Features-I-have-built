@@ -6,23 +6,37 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
 def check_epic_freebies():
+    CACHED_FILE = "epic_cache.txt" # Cache the file
     url = "https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=en-US&country=GB&allowCountries=GB" # Scan for free games
 
     try:
         response = requests.get(url).json()
         elements = response["data"]["Catalog"]["searchStore"]["elements"]
 
-        free_game = []
+        current_free_game = []
         for game in elements:
             # Check for a free game promotional offer
-            if game.get("promotions") and game["promotions"].get("promotionalOffers"):
                 offers = game["promotions"]["promotionalOffers"]
                 if offers:
-                    free_game.append(game["title"])
+                    current_free_game.append(game["title"])
 
-        if free_game:
-            message = "Epic Games are currently giving these freebies this week: \n" + "\n".join([f"- {game}" for game in free_game])
+        if os.path.exists(CACHED_FILE):
+             with open(CACHED_FILE, "r") as f:
+                  seen_games = [line.strip() for line in f]
+
+        else:
+             seen_games = [] # Make a new list
+
+        # Only alert me if there is a new game released every week.
+        new_game = [g for g in current_free_game if g not in seen_games]
+        
+        if new_game:
+            message = "Epic Games are currently giving these freebies this week: \n" + "\n".join([f"- {game}" for game in new_game])
             send_discord_alert("gaming_price", message)
+
+            # Updates the cached file, preventing duplicate announcments every two hours.
+            with open (CACHED_FILE, "w") as f:
+                 f.write("\n".join(current_free_game))
 
     except Exception as e:
         print(f"Failed to find Free games! :(")
