@@ -8,13 +8,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
 
 # --- Configuration & Memory ---
-MEMORY_FILE = "status_memory.txt"
-
-# Read the previous state from cache memory
-previous_status = "On Time" 
-if os.path.exists(MEMORY_FILE):
-    with open(MEMORY_FILE, "r") as f:
-        previous_status = f.read().strip()
+script_dir = os.path.dirname(os.path.abspath(__file__))
+TRAIN_CACHED_FILE = os.path.join(script_dir, "train_status_cache.txt") # Cache the trains into this file
 
 # Journey details, which the bot will use to alert me of issues
 ROUTES = [
@@ -22,22 +17,14 @@ ROUTES = [
     {"from": "MCB", "to": "HMD", "name": "Moulsecoomb to Hampden Park"}
 ]
 
-# Track already sent alerts, so I do not bombard my phone
-ALREADY_SENT = {}
-
-# Clear trains older than two hours
-def clean_memory():
-    now = datetime.now()
-    cutoff = now - timedelta(hours=2)
-
-    expired_keys = [sid for sid, timestamp in ALREADY_SENT.items() if timestamp < cutoff]
-    for sid in expired_keys:
-        del ALREADY_SENT[sid]
-
 def check_trains():
-    global previous_status
-    clean_memory()
-    now = datetime.now()
+    if os.path.exists(TRAIN_CACHED_FILE): # Does the requested file exist?
+        with open(TRAIN_CACHED_FILE, "r") as f:
+            sent_snapshots = [line.strip() for line in f if line.strip()] # Search through the file
+    else:
+        sent_snapshots = [] # Make a new list
+
+    current_bad_snapshot = [] # Make a list of bad snapshots
 
     for route in ROUTES:
         from_st = route["from"]
@@ -81,50 +68,33 @@ def check_trains():
                 est_min = int(estimated.split(":")[0]) * 60 + int(estimated.split(":")[1])
                 delay_amount = max(0, est_min - sched_min)
 
-            # Determine current status for memory tracking
-            if is_cancelled: current_status = "Cancelled"
-            elif delay_amount >= 5: current_status = f"{delay_amount} mins late"
-            else: current_status = "On Time"
-
-            # 1. Alert if status changed (Professional "All-Clear" tracker)
-            if current_status != previous_status:
-                msg = f"🔔 Status for {scheduled} changed from '{previous_status}' to '{current_status}'"
-                send_discord_alert("trains", msg)
-                # Update memory
-                with open(MEMORY_FILE, "w") as f:
-                    f.write(current_status)
-                previous_status = current_status
-                time.sleep(15)
-            
-            # 2. Skip if already sent (Not interested in ones already sent)
-            if service_id in ALREADY_SENT:
-                continue 
-
             # Train is cancelled
             if is_cancelled:
-                message = (f"**Southern Cancelled Train!!**\n"
-                           f"The **{scheduled}** Southern service ({route_name}) has been **cancelled**.\n"
-                           f"💬 **Reason:** {cancel_reason}")
-                send_discord_alert("trains", message)
-                
-                ALREADY_SENT[service_id] = now
-                print(f"Cancellation alert sent for {scheduled} train ({route_name})")
-                time.sleep(15)
-                continue
+                snapshot = f"{scheduled}_{route_name}_Cancelled"
+                current_bad_snapshot.append(snapshot)
 
-            # Only interested in trains delayed by five minutes or more
-            if delay_amount >= 5:
-                message = (f"**Southern alert!**\n"
-                           f"The **{scheduled}** Southern service ({route_name}) "
-                           f"is running **{delay_amount} minutes late**\n"
-                           f"💬 **Reason:** {delay_reason}")
+                if snapshot not in sent_snapshots:
+                    message = (f"**Southern Cancelled Train!!**\n"
+                               f"The **{scheduled}** Southern service ({route_name}) has been **cancelled**.\n"
+                               f"🚫**Reason:** {cancel_reason}")
+                    send_discord_alert("trains", message)
+                    time.sleep(5)
                 
-                # Send to Discord
-                send_discord_alert("trains", message)
+                elif delay_amount >= 5:
+                    snapshot = f"{scheduled}_{route_name}_{delay_amount} minutes"
+                    current_bad_snapshot.append(snapshot)
 
-                ALREADY_SENT[service_id] = now
-                print(f"Alert sent for {scheduled} train - {delay_amount} mins late ({route_name})")
-                time.sleep(15)
+                    if snapshot not in sent_snapshots:
+                        message = (f"**Southern alert!**\n"
+                                   f"The **{scheduled}** Southern service ({route_name}) "
+                                   f"is running **{delay_amount} minutes late**\n"
+                                   f"⚠️**Reason:** {delay_reason}")
+                        # Send to Discord
+                        send_discord_alert("trains", message)
+                        time.sleep(5)
+
+        with open(TRAIN_CACHED_FILE, "w") as f:
+            f.write("\n".join(current_bad_snapshot))
 
 # Runs every 5 minutes
 if __name__ == "__main__":
