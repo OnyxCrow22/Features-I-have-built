@@ -14,7 +14,7 @@ def check_headlines():
     # Get the BBC News UK Top Stories RSS Feed
     NEWS_SOURCE = {
         "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
-        "Sky News": "https://news.sky.com/feeds/rss/home.xml",
+        "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
         "Daily Mail": "https://www.dailymail.co.uk/home/index.rss",
         "The Guardian": "https://www.theguardian.com/uk/rss"
     }
