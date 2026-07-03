@@ -37,8 +37,9 @@ def check_steam_prices():
                 price = price_info["final_formatted"]
                 discount = price_info["discount_percent"]
 
-                current_sale_snapshot = f"{name} ({discount}% off - {price})"
-                sales_report.append(f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
+                snapshot_str = f"{name} ({discount}% off - {price})"
+                current_sale_snapshot.append(snapshot_str)
+                sales_report.append((snapshot_str, f"**{name}** is currently **{discount}% off**! The current price is **{price}**"))
 
     if (os.path.exists(CACHED_FILE)):
         with open(CACHED_FILE, "r", encoding="utf-8") as f:
@@ -58,8 +59,8 @@ def check_steam_prices():
     else:
         print(f"No new Steam sales currently occuring!")
 
-        with open(CACHED_FILE, "w", encoding="utf-8") as f:
-            f.write("\n".join(current_sale_snapshot))
+    with open(CACHED_FILE, "w", encoding="utf-8") as f:
+        f.write("\n".join(current_sale_snapshot))
 
 if __name__ == "__main__":
     check_steam_prices()
