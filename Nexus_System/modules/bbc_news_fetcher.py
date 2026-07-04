@@ -4,10 +4,24 @@ import time
 import xml.etree.ElementTree as ET
 import email.utils
 from datetime import datetime, timedelta, timezone
+import re
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
+
+def clean_html(text):
+    # Remove junk from RSS feed
+    if not text:
+        return ""
+    
+    # Remove HTML tags
+    clean = re.sub(r'<[^>]+>', '', text)
+
+    # Decode HTML attributes
+    clean = clean.replace('&nbsp; ', ' ').replace('&amp;', '&').replace('&gt;', '>').replace('&quot;', '"')
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    return clean # Finish cleaning up
 
 def check_headlines():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +80,10 @@ def check_headlines():
                                 pass
 
                         if is_recent:
+                            clean_description = clean_html(description)
+
+                            if len(clean_description) > 250:
+                                clean_description = clean_description[:247] + "..."
                             formatted_story = f"**{title}**\n>{description}\n{link}"
                             new_stories.append(formatted_story)
 
