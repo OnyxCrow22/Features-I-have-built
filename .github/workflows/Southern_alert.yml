@@ -25,12 +25,13 @@ jobs:
         env:
           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
 
-        -name: Check Aircraft
+      - name: Check Aircraft
         if: ${{ github.event.schedule == '0,20,40 * * * *' || github.event_name == 'workflow_dispatch' }}
-         python Nexus_System/modules/aircraft_tracker.py
-        env: AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
+        run: python Nexus_System/modules/aircraft_tracker.py
+        env: 
+          AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
           
-        -name: Check Steam + Epic + News (hourly)
+      - name: Check Steam + Epic + News (hourly)
         # Runs at :00 past the hour only
         if: ${{ github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch' }}
         run: |
