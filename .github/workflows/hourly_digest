@@ -1,0 +1,35 @@
+name: Hourly Digest - Deals & News
+on:
+  schedule:
+    - cron: '0 * * * *'  # Top of every hour
+  workflow_dispatch:
+
+jobs:
+  run-hourly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: pip install requests feedparser beautifulsoup4
+          
+      - name: Check Steam Deals
+        run: python Nexus_System/modules/steam_deals.py
+        env:
+          STEAM_WEBHOOK_URL: ${{ secrets.STEAM_WEBHOOK_URL }}
+          
+      - name: Check Epic Free Games
+        run: python Nexus_System/modules/epic_free.py
+        env:
+          EPIC_WEBHOOK_URL: ${{ secrets.EPIC_WEBHOOK_URL }}
+          
+      - name: Check News Headlines
+        run: python Nexus_System/modules/news_scraper.py
+        env:
+          NEWS_WEBHOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
