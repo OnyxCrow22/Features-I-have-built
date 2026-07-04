@@ -16,13 +16,19 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 def current_location():
+    # Check for manual override first
+    if os.getenv('OVERRIDE_LAT') and os.getenv('OVERRIDE_LON'):
+        return float(os.getenv('OVERRIDE_LAT')), float(os.getenv('OVERRIDE_LON')), os.getenv('OVERRIDE_CITY', 'Custom')
+    
     if os.getenv('GITHUB_ACTIONS') == 'true':
         print("Running on GitHub Actions - forcing Eastbourne coords")
         return 50.77, 0.28, "Eastbourne"
+    
     try:
         resp = requests.get('http://ip-api.com/json/', timeout=3).json()
         return resp['lat'], resp['lon'], resp['city']
-    except:
+    except Exception as e:
+        print(f"Geolocation failed: {e}")
         return 50.77, 0.28, "Eastbourne"
 
 
