@@ -80,11 +80,11 @@ def check_trains():
                     send_discord_alert("trains", message)
                     time.sleep(5)
                 
-                elif delay_amount >= 5:
-                    snapshot = f"{scheduled}_{route_name}_{delay_amount} minutes"
-                    current_bad_snapshot.append(snapshot)
+            elif delay_amount >= 5:
+                snapshot = f"{scheduled}_{route_name}_{delay_amount} minutes"
+                current_bad_snapshot.append(snapshot)
 
-                    if snapshot not in sent_snapshots:
+                if snapshot not in sent_snapshots:
                         message = (f"**Southern alert!**\n"
                                    f"The **{scheduled}** Southern service ({route_name}) "
                                    f"is running **{delay_amount} minutes late**\n"
@@ -93,8 +93,8 @@ def check_trains():
                         send_discord_alert("trains", message)
                         time.sleep(5)
 
-        with open(TRAIN_CACHED_FILE, "w") as f:
-            f.write("\n".join(current_bad_snapshot))
+    with open(TRAIN_CACHED_FILE, "w") as f:
+        f.write("\n".join(current_bad_snapshot))
 
 # Runs every 5 minutes
 if __name__ == "__main__":
