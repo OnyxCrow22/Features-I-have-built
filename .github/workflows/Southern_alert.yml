@@ -1,44 +1,25 @@
-name: Nexus Hub Program
+name: Southern Train Tracker
 on:
   schedule:
-    # Run every 5 minutes (the '*/5' means every 5th minute)
-    - cron: '*/10 * * * *'
-  workflow_dispatch: # This allows you to press a "Run" button in GitHub!
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch: # Allows manual runs from GitHub UI
 
 jobs:
-  run-hub:
+  check-trains:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout repo
         uses: actions/checkout@v4
-
+        
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-
+          python-version: '3.11'
+          
       - name: Install dependencies
         run: pip install requests
-
-      - name: Check Trains
-        run: python "Nexus_System/modules/Southern Bot Check.py"
+          
+      - name: Check Southern Services
+        run: python Nexus_System/modules/train_tracker.py
         env:
           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
-
-      - name: Check Aircraft
-        if: ${{ github.event.schedule == '0,5,10,15,20,25,30,35,40,45,50,55 * * * *' || github.event_name == 'workflow_dispatch' }}
-        run: python Nexus_System/modules/aircraft_tracker.py
-        env: 
-          AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
-          
-      - name: Check Steam + Epic + News (hourly)
-        # Runs at :00 past the hour only
-        if: ${{ github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch' }}
-        run: |
-          python Nexus_System/modules/steam_price_tracker.py
-          python Nexus_System/modules/epic_freebies.py
-          python Nexus_System/modules/bbc_news_fetcher.py
-        env:
-           GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
-           NEWS_WEBHOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
-           
