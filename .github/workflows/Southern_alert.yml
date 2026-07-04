@@ -26,7 +26,7 @@ jobs:
           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
 
       - name: Check Aircraft
-        if: ${{ github.event.schedule == '0,20,40 * * * *' || github.event_name == 'workflow_dispatch' }}
+        if: ${{ github.event.schedule == '0,5,10,15,20,25,30,35,40,45,50,55 * * * *' || github.event_name == 'workflow_dispatch' }}
         run: python Nexus_System/modules/aircraft_tracker.py
         env: 
           AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
