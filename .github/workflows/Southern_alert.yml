@@ -20,6 +20,6 @@ jobs:
         run: pip install requests
           
       - name: Check Southern Services
-        run: python Nexus_System/modules/train_tracker.py
+        run: python "Nexus_System/modules/Southern Bot Checker.py"
         env:
           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
