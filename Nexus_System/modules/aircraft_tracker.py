@@ -16,6 +16,9 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 def current_location():
+    if os.getenv('GITHUB_ACTIONS') == 'true':
+        print("Running on GitHub Actions - forcing Eastbourne coords")
+        return 50.77, 0.28, "Eastbourne"
     try:
         resp = requests.get('http://ip-api.com/json/', timeout=3).json()
         return resp['lat'], resp['lon'], resp['city']
@@ -108,7 +111,7 @@ def check_local_airspace():
             print("No aircraft detected :(")
 
     except Exception as e:
-        print(f"ERROR checking airspace!")
+        print(f"Unexpected error: {type(e).__name__}: {e}")
 
 if __name__ == "__main__":
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
