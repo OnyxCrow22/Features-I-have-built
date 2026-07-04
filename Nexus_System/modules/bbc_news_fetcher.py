@@ -50,8 +50,10 @@ def check_headlines():
                     description = item.find("description").text if item.find("description") is not None else ""
                     pub_date_text = item.find("pubDate").text if item.find("pubDate") is not None else None
 
-                    if link:
-                        current_links.append(link)
+                    if not link:
+                        continue
+
+                    current_links.append(link)
 
                     if link not in seen_links:
                         is_recent = True
@@ -63,13 +65,13 @@ def check_headlines():
                             except Exception:
                                 pass
 
-                    if is_recent:
-                        formatted_story = f"**{title}**\n>{description}\n{link}"
-                        new_stories.append(formatted_story)
+                        if is_recent:
+                            formatted_story = f"**{title}**\n>{description}\n{link}"
+                            new_stories.append(formatted_story)
 
             except Exception as e:
                 print(f"FAILURE in fetching RSS feed!: {e}")
-            continue
+                continue
 
         if new_stories:
             for i, story in enumerate(new_stories):

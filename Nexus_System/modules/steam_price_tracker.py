@@ -37,8 +37,9 @@ def check_steam_prices():
                 price = price_info["final_formatted"]
                 discount = price_info["discount_percent"]
 
-                snapshot_str = f"{name} ({discount}% off - {price})"
+                snapshot_str = f"{app_id}_{discount})"
                 current_sale_snapshot.append(snapshot_str)
+                
                 sales_report.append(f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
 
     if (os.path.exists(CACHED_FILE)):
