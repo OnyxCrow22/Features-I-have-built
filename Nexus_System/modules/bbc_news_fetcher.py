@@ -4,6 +4,7 @@ import time
 import xml.etree.ElementTree as ET
 import email.utils
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlparse, urlunparse
 import re
 import sys
 
@@ -22,6 +23,13 @@ def clean_html(text):
     clean = clean.replace('&nbsp; ', ' ').replace('&amp;', '&').replace('&gt;', '>').replace('&quot;', '"')
     clean = re.sub(r'\s+', ' ', clean).strip()
     return clean # Finish cleaning up
+
+def normalise_link(URL): # Stop news from spamming
+    if not URL:
+        return ""
+    parsed = urlparse(URL)
+
+    return urlunparse((parsed.scheme, parsed.netloc, parsed.path, '', '', ''))
 
 def check_headlines():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -67,14 +75,15 @@ def check_headlines():
                     if not link:
                         continue
 
-                    current_links.append(link)
+                    clean_link = normalise_link(link)
+                    current_links.append(clean_link)
 
-                    if link not in seen_links:
+                    if clean_link not in seen_links:
                         is_recent = True
                         if pub_date_text:
                             try:
-                                pub_date_text = email.utils.parsedate_to_datetime(pub_date_text)
-                                if now - pub_date_text > timedelta(minutes=15):
+                                pub_date = email.utils.parsedate_to_datetime(pub_date_text)
+                                if now - pub_date > timedelta(minutes=15):
                                     is_recent = False
                             except Exception:
                                 pass
@@ -84,7 +93,7 @@ def check_headlines():
 
                             if len(clean_description) > 250:
                                 clean_description = clean_description[:247] + "..."
-                            formatted_story = f"**{title}**\n>{description}\n{link}"
+                            formatted_story = f"**{title}**\n>{clean_description}\n{link}"
                             new_stories.append(formatted_story)
 
             except Exception as e:
@@ -105,7 +114,7 @@ def check_headlines():
             f.write("\n".join(current_links))
 
     except Exception as e:
-        print(f"ERROR fetching news from {source_name}!: {e}")
+        print(f"ERROR fetching news!: {e}")
 
 if __name__ == "__main__":
     print("Checking for breaking news...")
