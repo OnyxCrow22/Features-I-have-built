@@ -2,21 +2,42 @@ import requests
 import os
 import sys
 import time
+import math
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert
+
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat/2)**2 + math.cos(math.radians(lat1))
+         * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2)
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+def current_location():
+    try:
+        resp = requests.get('http://ip-api.com/json/', timeout=3).json()
+        return resp['lat'], resp['lon'], resp['city']
+    except:
+        return 50.77, 0.28, "Eastbourne"
+
 
 def check_local_airspace():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     AIRCRAFT_FILE = os.path.join(script_dir, "aircraft_cache.txt")
 
     # --- CONFIGURATION ---
-    LAT_MIN, LAT_MAX = 50.65, 50.97 # North and South of the area
-    LON_MIN, LON_MAX = 0.00, 0.45 # West and East
+    CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
+    RADIUS_KM = 15
 
     # Aircraft to monitor:
-    WATCHLIST = ["ZA947", "PA474", "DRAGON01", "EZY", "BAW", "RYR", "BMSB", "AIDN", "AWGB",
-                 "MCSW", "MIL", "SPMIL", "CFE", "EFW", "EJU", "ZZ334"]
+    WATCHLIST = ["ZA947", "PA474", "DRAGON01", "EZY", "BAW", "RYR", "GBMSB", "GAIDN", "GAWGB",
+                 "GMCSW", "MIL", "SPMIL", "CFE", "EFW", "EJU", "ZZ334", "RRR"]
+    
+    BOX_DEG = RADIUS_KM / 111
+    LAT_MIN, LAT_MAX = CURRENT_LAT - BOX_DEG, CURRENT_LAT + BOX_DEG
+    LON_MIN, LON_MAX = CURRENT_LON - BOX_DEG * 1.5, CURRENT_LON + BOX_DEG * 1.5
 
     url = f"https://opensky-network.org/api/states/all?lamin={LAT_MIN}&lamax={LAT_MAX}&lomin={LON_MIN}&lomax={LON_MAX}" # The Uniform Resource Locator for fetching the data
 
@@ -49,9 +70,14 @@ def check_local_airspace():
             icao24 = flight[0].strip().lower() # Get the ICAO code
             callsign = flight[1].strip().upper() if flight[1] else "EMPTY" # Get the callsign, if known
             on_ground = flight[8] # Check whether the aircraft is on the ground or in the air
+            lat, lon = flight[6], flight[5] # Lat and Lon from OpenSky
 
-            if on_ground:
+            if on_ground or not lat or not lon:
                 continue # Not worth tracking
+
+            dist = haversine(CURRENT_LAT, CURRENT_LON, lat, lon)
+            if dist > RADIUS_KM:
+                continue # Too far away from the current location
 
             is_watched = any(item in callsign or item in icao24 for item in WATCHLIST) # Is the aircraft being watched?
             is_uncommon = "MIL" in callsign or "RESCUE" in callsign # Is the aircraft uncommon?
@@ -64,11 +90,10 @@ def check_local_airspace():
                         f"**{source_label}**\n"
                         f"✈️ **Callsign:** {callsign} \n"
                         f"🌐 **Origin point:** {flight[2]} \n"
-                        f"📍 **Radar Tracker**: [Live Flight Radar](https://www.flightradar24.com/?q={callsign})" 
+                        f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24}" 
                         )
                     new_alert.append(message)
                     newly_alerted_aircraft.append(icao24)
-                    newly_alerted_aircraft.append(callsign)
 
         if new_alert:
             for i, alert in enumerate(new_alert):
@@ -86,6 +111,7 @@ def check_local_airspace():
         print(f"ERROR checking airspace!")
 
 if __name__ == "__main__":
+    CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
     print("Scanning EWS area for aircraft...")
     check_local_airspace()
 
