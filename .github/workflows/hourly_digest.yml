@@ -22,12 +22,12 @@ jobs:
       - name: Check Steam Deals
         run: python Nexus_System/modules/steam_price_tracker.py
         env:
-          GAMING_PRICES_WEBHOOK_URL: ${{ secrets.GAMING_PRICES_WEBHOOK_URL }}
+          GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
           
       - name: Check Epic Free Games
         run: python Nexus_System/modules/epic_freebies.py
         env:
-          GAMING_PRICES_WEBHOOK_URL: ${{ secrets.GAMING_PRICES_WEBHOOK_URL }}
+          GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
           
       - name: Check News Headlines
         run: python Nexus_System/modules/bbc_news_fetcher.py
