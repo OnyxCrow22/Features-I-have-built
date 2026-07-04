@@ -32,4 +32,4 @@ jobs:
            TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
            GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
            NEWS_WEBHOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
-           AIRCRAFT_WEBHOOK_URL: $(( secrets.AIRCRAFT_WEBHOOK_URL }}
+           AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
