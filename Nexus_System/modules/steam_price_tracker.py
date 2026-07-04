@@ -39,7 +39,7 @@ def check_steam_prices():
 
                 snapshot_str = f"{name} ({discount}% off - {price})"
                 current_sale_snapshot.append(snapshot_str)
-                sales_report.append((snapshot_str, f"**{name}** is currently **{discount}% off**! The current price is **{price}**"))
+                sales_report.append(f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
 
     if (os.path.exists(CACHED_FILE)):
         with open(CACHED_FILE, "r", encoding="utf-8") as f:
