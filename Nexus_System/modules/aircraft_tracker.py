@@ -42,18 +42,15 @@ def check_local_airspace():
                 return
             
         new_alert = [] # New list for alerts
-        currently_tracked = [] # The aircraft currently being tracked by the Discord bot
+        newly_alerted_aircraft = [] # The aircraft currently being tracked by the Discord bot
 
         for flight in states:
-            icao24 = flight[0] # Get the ICAO code
-            callsign = flight[1].strip() if flight[1] else "EMPTY" # Get the callsign, if known
-            origin_country = flight[2] # Get the origin country of the aircraft
+            icao24 = flight[0].strip().lower() # Get the ICAO code
+            callsign = flight[1].strip().upper() if flight[1] else "EMPTY" # Get the callsign, if known
             on_ground = flight[8] # Check whether the aircraft is on the ground or in the air
 
             if on_ground:
                 continue # Not worth tracking
-
-            currently_tracked.append(icao24) # Add the ICAO code to the list
 
             is_watched = any(item in callsign or item in icao24 for item in WATCHLIST) # Is the aircraft being watched?
             is_uncommon = "MIL" in callsign or "RESCUE" in callsign # Is the aircraft uncommon?
@@ -65,21 +62,24 @@ def check_local_airspace():
                     message = (
                         f"**{source_label}**\n"
                         f"✈️ **Callsign:** {callsign} \n"
-                        f"🌐 **Origin point:** {origin_country} \n"
+                        f"🌐 **Origin point:** {flight[2]} \n"
                         f"📍 **Radar Tracker**: [Live Flight Radar](https://www.flightradar24.com/?q={callsign})" 
                         )
                     new_alert.append(message)
+                    newly_alerted_aircraft.append(icao24)
+                    newly_alerted_aircraft.append(callsign)
 
         if new_alert:
             for i, alert in enumerate(new_alert):
                 send_discord_alert("aircraft", alert)
                 if i < len(new_alert) - 1:
                     time.sleep(5)
+
+            with open(AIRCRAFT_FILE, "a") as f:
+                for ac in newly_alerted_aircraft:
+                    f.write(f"{ac}\n")
         else:
             print("No aircraft detected :(")
-
-        with open(AIRCRAFT_FILE, "w") as f:
-            f.write("\n".join(currently_tracked))
 
     except Exception as e:
         print(f"ERROR checking airspace!")
