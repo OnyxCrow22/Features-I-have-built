@@ -2,7 +2,7 @@ name: Nexus Hub Program
 on:
   schedule:
     # Run every 5 minutes (the '*/5' means every 5th minute)
-    - cron: '*/5 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch: # This allows you to press a "Run" button in GitHub!
 
 jobs:
@@ -20,16 +20,24 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Run Hub Modules
-        # You can add as many modules here as you want
+      - name: Check Trains
+        run: python "Nexus_System/modules/Southern Bot Check.py"
+        env:
+          TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
+
+        -name: Check Aircraft
+        if: ${{ github.event.schedule == '0,20,40 * * * *' || github.event_name == 'workflow_dispatch' }}
+         python Nexus_System/modules/aircraft_tracker.py
+        env: AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
+          
+        -name: Check Steam + Epic + News (hourly)
+        # Runs at :00 past the hour only
+        if: ${{ github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch' }}
         run: |
           python Nexus_System/modules/steam_price_tracker.py
-          python "Nexus_System/modules/Southern Bot Check.py"
           python Nexus_System/modules/epic_freebies.py
           python Nexus_System/modules/bbc_news_fetcher.py
-          python Nexus_System/modules/aircraft_tracker.py
         env:
-           TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
            GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
            NEWS_WEBHOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
-           AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
+           
