@@ -1,0 +1,19 @@
+name: Aircraft Tracker
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Every 5 mins
+  workflow_dispatch:
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install requests geocoder
+      - name: Check Airspace
+        run: python Nexus_System/modules/aircraft_tracker.py
+        env:
+          AIRCRAFT_WEBHOOK_URL: ${{ secrets.AIRCRAFT_WEBHOOK_URL }}
