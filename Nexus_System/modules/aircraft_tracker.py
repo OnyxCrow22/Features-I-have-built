@@ -90,7 +90,7 @@ def check_local_airspace():
                         f"**{source_label}**\n"
                         f"✈️ **Callsign:** {callsign} \n"
                         f"🌐 **Origin point:** {flight[2]} \n"
-                        f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24}" 
+                        f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
                         )
                     new_alert.append(message)
                     newly_alerted_aircraft.append(icao24)
