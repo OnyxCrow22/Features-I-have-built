@@ -20,16 +20,16 @@ jobs:
         run: pip install requests feedparser beautifulsoup4
           
       - name: Check Steam Deals
-        run: python Nexus_System/modules/steam_deals.py
+        run: python Nexus_System/modules/steam_price_tracker.py
         env:
-          STEAM_WEBHOOK_URL: ${{ secrets.STEAM_WEBHOOK_URL }}
+          GAMING_PRICES_WEBHOOK_URL: ${{ secrets.GAMING_PRICES_WEBHOOK_URL }}
           
       - name: Check Epic Free Games
-        run: python Nexus_System/modules/epic_free.py
+        run: python Nexus_System/modules/epic_freebies.py
         env:
-          EPIC_WEBHOOK_URL: ${{ secrets.EPIC_WEBHOOK_URL }}
+          GAMING_PRICES_WEBHOOK_URL: ${{ secrets.GAMING_PRICES_WEBHOOK_URL }}
           
       - name: Check News Headlines
-        run: python Nexus_System/modules/news_scraper.py
+        run: python Nexus_System/modules/bbc_news_fetcher.py
         env:
           NEWS_WEBHOOK_URL: ${{ secrets.NEWS_WEBHOOK_URL }}
