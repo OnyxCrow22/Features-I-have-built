@@ -16,7 +16,7 @@ def check_local_airspace():
 
     # Aircraft to monitor:
     WATCHLIST = ["ZA947", "PA474", "DRAGON01", "EZY", "BAW", "RYR", "BMSB", "AIDN", "AWGB",
-                 "GMCSW", "MIL", "SPMIL"]
+                 "GMCSW", "MIL", "SPMIL", "CFE", "EFW"]
 
     url = f"https://opensky-network.org/api/states/all?lamin={LAT_MIN}&lamax={LAT_MAX}&lomin={LON_MIN}&lomax={LON_MAX}" # The Uniform Resource Locator for fetching the data
 
