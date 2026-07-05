@@ -42,7 +42,7 @@ def check_local_airspace():
 
     # Aircraft to monitor:
     WATCHLIST = ["ZA947", "PA474", "DRAGON01", "EZY", "BAW", "RYR", "GBMSB", "GAIDN", "GAWGB",
-                 "GMCSW", "MIL", "SPMIL", "CFE", "EFW", "EJU", "ZZ334", "RRR", "EXS", "EZS"]
+                 "GMCSW", "MIL", "SPMIL", "CFE", "EFW", "EJU", "ZZ334", "RRR", "EXS", "EZS", "AFR"]
     
     BOX_DEG = RADIUS_KM / 111
     LAT_MIN, LAT_MAX = CURRENT_LAT - BOX_DEG, CURRENT_LAT + BOX_DEG
