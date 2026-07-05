@@ -1,7 +1,5 @@
 name: Hourly Digest - Deals & News
 on:
-  schedule:
-    - cron: '0 * * * *'  # Top of every hour
   workflow_dispatch:
 
 jobs:
