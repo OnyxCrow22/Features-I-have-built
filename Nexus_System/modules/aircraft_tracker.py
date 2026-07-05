@@ -48,24 +48,20 @@ def check_local_airspace():
     LAT_MIN, LAT_MAX = CURRENT_LAT - BOX_DEG, CURRENT_LAT + BOX_DEG
     LON_MIN, LON_MAX = CURRENT_LON - BOX_DEG * 1.5, CURRENT_LON + BOX_DEG * 1.5
 
-    url = f"https://opensky-network.org/api/states/all?lamin={LAT_MIN}&lamax={LAT_MAX}&lomin={LON_MIN}&lomax={LON_MAX}" # The Uniform Resource Locator for fetching the data
+    url = f"https://api.adsb.lol/v2/bbox/{LAT_MIN}/{LAT_MAX}/{LON_MIN}/{LON_MAX}" # The Uniform Resource Locator for fetching the data
 
     try:
         if os.path.exists(AIRCRAFT_FILE):
             with open(AIRCRAFT_FILE, "r") as f:
-                seen_aircraft = [line.strip() for line in f if line.strip()]
+                previously_seen_icaos = {line.strip() for line in f if line.strip()}
         else:
-            seen_aircraft = [] # New list
+            previously_seen_icaos = set()
 
-        response = requests.get(url, timeout=10)
-        if (response.status_code != 200):
-            print(f"Hmm, it appears the OpenSky API could not be reached at this time. Please try again later")
-            return
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        aircraft_list = response.json().get('ac', [])
         
-        data = response.json() # Output contents to a .JSON file
-        states = data.get("states", [])
-
-        if not states:
+        if not aircraft_list:
             print(f"Target airspace is currently void of targeted aircraft at the moment.")
             # clear cache
             with open(AIRCRAFT_FILE, "w") as f:
@@ -75,11 +71,12 @@ def check_local_airspace():
         new_alert = [] # New list for alerts
         newly_alerted_aircraft = [] # The aircraft currently being tracked by the Discord bot
 
-        for flight in states:
-            icao24 = flight[0].strip().lower() # Get the ICAO code
-            callsign = flight[1].strip().upper() if flight[1] else "EMPTY" # Get the callsign, if known
-            on_ground = flight[8] # Check whether the aircraft is on the ground or in the air
-            lat, lon = flight[6], flight[5] # Lat and Lon from OpenSky
+        for flight in aircraft_list:
+            icao24 = flight.get('hex', '').strip().lower() # Get the ICAO code
+            callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get the callsign, if known
+            on_ground = flight.get('ground', False) # Check whether the aircraft is on the ground or in the air
+            lat = flight.get('lat') # Lat and Lon from ADSB
+            lon = flight.get('lon')
 
             if on_ground or not lat or not lon:
                 continue # Not worth tracking
@@ -89,16 +86,20 @@ def check_local_airspace():
                 continue # Too far away from the current location
 
             is_watched = any(item in callsign or item in icao24 for item in WATCHLIST) # Is the aircraft being watched?
-            is_uncommon = "MIL" in callsign or "RESCUE" in callsign # Is the aircraft uncommon?
+            is_uncommon = "MIL" in callsign or "RESCUE" in callsign or flight.get('type') == "MILT" # Is the aircraft uncommon?
 
             if is_watched or is_uncommon:
-                if icao24 not in seen_aircraft:
+                if icao24 not in previously_seen_icaos:
                     source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
+
+                    registration = flight.get('r', 'Unknown') # FIX: 'r' = registration
+                    aircraft_type = flight.get('t', 'Unknown') # FIX: 't' = aircraft type
 
                     message = (
                         f"**{source_label}**\n"
                         f"✈️ **Callsign:** {callsign} \n"
-                        f"🌐 **Origin point:** {flight[2]} \n"
+                        f"📝 **{registration}** | **Type:** {aircraft_type}\n"
+                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}km\n"
                         f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
                         )
                     new_alert.append(message)
