@@ -41,8 +41,12 @@ def check_local_airspace():
     RADIUS_KM = 30 # 19 Miles
 
     # Aircraft to monitor:
-    WATCHLIST = ["ZA947", "PA474", "DRAGON01", "GBMSB", "GAIDN", "GAWGB",
-                 "GMCSW", "MIL", "SPMIL", "ZZ334", "RRR"]
+    WATCHLIST = ["ZA947", "PA474", "GBMSB", "GAIDN", "GAWGB",
+                 "GMCSW", "MIL", "SPMIL", "ZZ334", "RRR", "GMRLL", "ZK313",
+                 "ZK317", "P7350", "AB910", "TE311", "LF363", "PZ865", "GBYWT",
+                 "GBYDB", "FHMEL", "GJPT", "GEWIZ", "GNGTC", "GIIRP", "GBPLM",
+                 "GHJSS", "GAYIJ", "GJJGI", "GBSET", "GCCXB", "GSPRX", "GSPRK", "FAYSB",
+                 "FHUSA", "HAWK", "REDARROW"]
 
     url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}" # The Uniform Resource Locator for fetching the data
 
