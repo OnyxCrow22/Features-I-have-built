@@ -11,13 +11,14 @@ from shared_utility import send_discord_alert
 def check_steam_prices():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    WISHLIST_FILE = os.path.join(script_dir, "wishlist.txt")
     CACHED_FILE = os.path.join(script_dir, "steam_cache.txt")
     
     sales_report = [] # New list for listing everything on sale
     current_sale_snapshot = [] # Track the current snapshot
 
     try:
-        with open(CACHED_FILE, "r") as f:
+        with open(WISHLIST_FILE, "r") as f:
             app_ids = [line.strip() for line in f if line.strip()]
     except FileNotFoundError:
         return
