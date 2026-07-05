@@ -38,7 +38,7 @@ def check_local_airspace():
 
     # --- CONFIGURATION ---
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
-    RADIUS_KM = 30 # 19 Miles
+    RADIUS_KM = 19 # 11 Miles
 
     # Aircraft to monitor:
     WATCHLIST = ["ZA947", "PA474", "GBMSB", "GAIDN", "GAWGB",
