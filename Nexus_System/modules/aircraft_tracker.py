@@ -43,17 +43,8 @@ def check_local_airspace():
     # Aircraft to monitor:
     WATCHLIST = ["ZA947", "PA474", "DRAGON01", "EZY", "BAW", "RYR", "GBMSB", "GAIDN", "GAWGB",
                  "GMCSW", "MIL", "SPMIL", "CFE", "EFW", "EJU", "ZZ334", "RRR", "EXS", "EZS", "AFR"]
-    
-    BOX_DEG = RADIUS_KM / 111
-    LAT_MIN, LAT_MAX = CURRENT_LAT - BOX_DEG, CURRENT_LAT + BOX_DEG
-    LON_MIN, LON_MAX = CURRENT_LON - BOX_DEG * 1.5, CURRENT_LON + BOX_DEG * 1.5
 
-    LAT_MIN = round(LAT_MIN, 4)
-    LAT_MAX = round(LAT_MAX, 4)
-    LON_MIN = round(LON_MIN, 4)
-    LON_MAX = round(LON_MAX, 4)
-
-    url = f"https://api.airplanes.live/v2/bbox/{LAT_MIN}/{LAT_MAX}/{LON_MIN}/{LON_MAX}" # The Uniform Resource Locator for fetching the data
+    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}" # The Uniform Resource Locator for fetching the data
 
     try:
         if os.path.exists(AIRCRAFT_FILE):
