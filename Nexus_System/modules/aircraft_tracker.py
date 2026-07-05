@@ -48,7 +48,7 @@ def check_local_airspace():
     LAT_MIN, LAT_MAX = CURRENT_LAT - BOX_DEG, CURRENT_LAT + BOX_DEG
     LON_MIN, LON_MAX = CURRENT_LON - BOX_DEG * 1.5, CURRENT_LON + BOX_DEG * 1.5
 
-    url = f"https://api.adsb.lol/v2/bbox/{LAT_MIN}/{LAT_MAX}/{LON_MIN}/{LON_MAX}" # The Uniform Resource Locator for fetching the data
+    url = f"https://api.adsb.lol/v2/bbox/{LAT_MIN}/{LON_MIN}/{LAT_MAX}/{LON_MAX}" # The Uniform Resource Locator for fetching the data
 
     try:
         if os.path.exists(AIRCRAFT_FILE):
