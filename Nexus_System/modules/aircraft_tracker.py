@@ -42,7 +42,7 @@ def check_local_airspace():
 
     # Aircraft to monitor:
     WATCHLIST = ["ZA947", "PA474", "GBMSB", "GAIDN", "GAWGB",
-                 "GMCSW", "MIL", "SPMIL", "ZZ334", "RRR", "GMRLL", "ZK313",
+                 "GMCSW", "GCCA", "GCICK", "MIL", "SPMIL", "ZZ334", "RRR", "GMRLL", "ZK313",
                  "ZK317", "P7350", "AB910", "TE311", "LF363", "PZ865", "GBYWT",
                  "GBYDB", "FHMEL", "GJPT", "GEWIZ", "GNGTC", "GIIRP", "GBPLM",
                  "GHJSS", "GAYIJ", "GJJGI", "GBSET", "GCCXB", "GSPRX", "GSPRK", "FAYSB",
