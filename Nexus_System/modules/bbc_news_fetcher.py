@@ -39,7 +39,6 @@ def check_headlines():
     NEWS_SOURCE = {
         "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
         "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
-        "Daily Mail": "https://www.dailymail.co.uk/home/index.rss",
         "The Guardian": "https://www.theguardian.com/uk/rss"
     }
 
