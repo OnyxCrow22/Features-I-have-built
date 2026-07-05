@@ -1,8 +1,6 @@
 name: Aircraft Tracker
 on:
-  schedule:
-    - cron: '*/10 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Manual / API Triggers
     inputs:
       lat:
         description: 'Latitude'
