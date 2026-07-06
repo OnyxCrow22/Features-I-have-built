@@ -2,6 +2,9 @@ name: Hourly Digest - Deals & News
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   run-hourly:
     runs-on: ubuntu-latest
