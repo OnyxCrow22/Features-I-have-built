@@ -2,6 +2,7 @@ import requests
 import time
 import sys
 import os
+import subprocess
 
 # Adds the parent directory to the search path so it can find shared_utility
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -62,6 +63,18 @@ def check_steam_prices():
 
     with open(CACHED_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(current_sale_snapshot))
+
+    try:
+        subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
+        subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
+        subprocess.run(["git", "add", CACHED_FILE], check=True)
+        subprocess.run(["git", "commit", "-m", f"Update Steam cache - {len(current_sale_snapshot)} sales"], check=True)
+        subprocess.run(["git", "push"], check=True)
+        print("Cache committed")
+    except subprocess.CalledProcessError:
+        print("Cache commit failed - probably no changes")
+    except Exception as e:
+        print(f"Cache commit error: {e}")
 
 if __name__ == "__main__":
     check_steam_prices()
