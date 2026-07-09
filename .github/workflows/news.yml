@@ -1,8 +1,7 @@
 # .github/workflows/news.yml
 name: News Fetcher
 on:
-  repository_dispatch:
-    types: [trigger-news]
+  workflow_dispatch: # Allows manual runs from GitHub UI
 
 permissions:
   contents: write
