@@ -1,8 +1,7 @@
 # .github/workflows/deals.yml
 name: Deals Tracker
 on:
-  repository_dispatch:
-    types: [trigger-deals]
+  workflow_dispatch: # Allows manual runs from GitHub UI
 
 jobs:
   run-deals:
