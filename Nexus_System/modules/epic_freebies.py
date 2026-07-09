@@ -34,7 +34,8 @@ def check_epic_freebies():
 
             for offer_group in promo_offers:
                 for offer in offer_group.get("promotionalOffers", []):
-                    discount_pct = offer.get("discountSetting", {}.get("discountPercentage"), 0)
+                    discount_setting = offer.get("discountSetting", {})
+                    discount_pct = discount_setting.get("discountPercentage", -1)
 
                     start_date = offer.get("startDate")
                     end_date = offer.get("endDate")
