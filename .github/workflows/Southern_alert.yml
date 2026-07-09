@@ -2,12 +2,22 @@ name: Southern Train Tracker
 on:
   workflow_dispatch: # Allows manual runs from GitHub UI
 
+
+permissions:
+  contents: write
+
+concurrency:
+  group: train-tracker
+  cancel-in-progress: false
+
 jobs:
   check-trains:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Set up Python
         uses: actions/setup-python@v5
