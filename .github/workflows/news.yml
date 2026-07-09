@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [trigger-news]
 
+permissions:
+  contents: write
+  
 jobs:
   run-news:
     runs-on: ubuntu-latest
