@@ -5,7 +5,7 @@ import requests
 from datetime import datetime, timedelta
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared_utility import send_discord_alert
+from shared_utility import send_discord_alert, commit_github
 
 # --- Configuration & Memory ---
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,9 +36,7 @@ def check_trains():
 
         try:
             responses = requests.get(url, timeout=10)
-            if responses.status_code != 200:
-                print(f"Failed to fetch train data for {route_name}!")
-                continue
+            responses.raise_for_status()
             data = responses.json()
         except Exception as e:
             print(f"Network error detected in checking for {route_name}: {e}")
@@ -61,6 +59,9 @@ def check_trains():
             is_cancelled = train.get("isCancelled", False)
             cancel_reason = train.get("cancelReason", "No reason provided.")
 
+            if not scheduled:
+                continue
+
             # Calculate delay
             delay_amount = 0
             if estimated and estimated.replace(":", "").isdigit():
@@ -80,7 +81,7 @@ def check_trains():
                     send_discord_alert("trains", message)
                     time.sleep(5)
                 
-            elif delay_amount >= 5:
+            elif delay_amount >= 5 or estimated == "Delayed":
                 snapshot = f"{scheduled}_{route_name}_{delay_amount} minutes"
                 current_bad_snapshot.append(snapshot)
 
@@ -95,6 +96,8 @@ def check_trains():
 
     with open(TRAIN_CACHED_FILE, "w") as f:
         f.write("\n".join(current_bad_snapshot))
+
+    commit_github(TRAIN_CACHED_FILE, f"Update train cache - {len(current_bad_snapshot)} issues")
 
 # Runs every 5 minutes
 if __name__ == "__main__":

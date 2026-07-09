@@ -5,7 +5,7 @@ import time
 import math
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared_utility import send_discord_alert
+from shared_utility import send_discord_alert, commit_github
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
@@ -17,7 +17,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 def current_location():
     # Check for manual override first
-    if os.getenv('OVERRIDE_LAT') and os.getenv('OVERRIDE_LON'):
+    if os.getenv('OVERRIDE_LAT') is not None:
         return float(os.getenv('OVERRIDE_LAT')), float(os.getenv('OVERRIDE_LON')), os.getenv('OVERRIDE_CITY', 'Custom')
     
     if os.getenv('GITHUB_ACTIONS') == 'true':
@@ -66,7 +66,8 @@ def check_local_airspace():
             # clear cache
             with open(AIRCRAFT_FILE, "w") as f:
                 f.write("")
-                return
+            commit_github(AIRCRAFT_FILE, "Clear Aircraft cache")
+            return
             
         new_alert = [] # New list for alerts
         newly_alerted_aircraft = [] # The aircraft currently being tracked by the Discord bot
@@ -92,8 +93,8 @@ def check_local_airspace():
                 if icao24 not in previously_seen_icaos:
                     source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
 
-                    registration = flight.get('r', 'Unknown') # FIX: 'r' = registration
-                    aircraft_type = flight.get('t', 'Unknown') # FIX: 't' = aircraft type
+                    registration = flight.get('r') or "Unknown"
+                    aircraft_type = flight.get('t') or "Unknown"
 
                     message = (
                         f"**{source_label}**\n"
@@ -114,6 +115,8 @@ def check_local_airspace():
             with open(AIRCRAFT_FILE, "a") as f:
                 for ac in newly_alerted_aircraft:
                     f.write(f"{ac}\n")
+
+            commit_github(AIRCRAFT_FILE, "Update aircraft cache")
         else:
             print("No aircraft detected :(")
 

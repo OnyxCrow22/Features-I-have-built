@@ -9,7 +9,7 @@ import re
 import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared_utility import send_discord_alert
+from shared_utility import send_discord_alert, commit_github
 
 def clean_html(text):
     # Remove junk from RSS feed
@@ -57,10 +57,7 @@ def check_headlines():
             print(f"Checking {source_name}")
             try:
                 responses = requests.get(rss_url, timeout=10)
-                if responses.status_code != 200:
-                    print(f"FAILED to fetch feed from {source_name}'s RSS Feed!")
-                    continue
-
+                responses.raise_for_status()
                 root = ET.fromstring(responses.content)
                 now = datetime.now(timezone.utc)
 
@@ -82,7 +79,7 @@ def check_headlines():
                         if pub_date_text:
                             try:
                                 pub_date = email.utils.parsedate_to_datetime(pub_date_text)
-                                if now - pub_date > timedelta(minutes=15):
+                                if now - pub_date > timedelta(hours=2):
                                     is_recent = False
                             except Exception:
                                 pass
@@ -111,6 +108,8 @@ def check_headlines():
 
         with open(CACHED_FILE, "w", encoding="utf-8") as f:
             f.write("\n".join(current_links))
+
+        commit_github(CACHED_FILE, f"Update news cache - {len(current_links)} headlines tracked")
 
     except Exception as e:
         print(f"ERROR fetching news!: {e}")

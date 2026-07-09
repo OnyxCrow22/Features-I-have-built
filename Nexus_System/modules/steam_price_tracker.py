@@ -6,7 +6,7 @@ import subprocess
 
 # Adds the parent directory to the search path so it can find shared_utility
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from shared_utility import send_discord_alert
+from shared_utility import send_discord_alert, commit_github
 
 # Checks for the Steam prices inside of the wishlist.txt file
 def check_steam_prices():
@@ -26,14 +26,23 @@ def check_steam_prices():
     
     for app_id in app_ids:
         url = f"https://store.steampowered.com/api/appdetails?appids={app_id}&cc=gb"
-        response = requests.get(url).json()
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            json_data = response.json()
+            app_data = response.get(app_id, {})
 
-        app_data = response.get(app_id, {})
+        except Exception as SE:
+            print(f"Failed to fetch {app_id}! {SE}")
+            continue
+
         if app_data.get("success") and "data" in app_data:
-            data = app_data["data"]
-            price_info = data.get("price_overview")
+                data = app_data["data"]
+                price_info = data.get("price_overview")
 
-            if price_info and price_info["discount_percent"] > 0:
+        sale_items = []
+
+        if price_info and price_info["discount_percent"] > 0:
                 name = data["name"]
                 price = price_info["final_formatted"]
                 discount = price_info["discount_percent"]
@@ -41,8 +50,10 @@ def check_steam_prices():
                 snapshot_str = f"{app_id}_{discount}"
                 current_sale_snapshot.append(snapshot_str)
 
-                sales_report.append(f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
+                alert_msg = (f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
+                sales_report.append((snapshot_str, alert_msg))
 
+    # Load the previous cached file
     if (os.path.exists(CACHED_FILE)):
         with open(CACHED_FILE, "r", encoding="utf-8") as f:
             seen_sales = [line.strip() for line in f if line.strip()]
@@ -50,9 +61,9 @@ def check_steam_prices():
         seen_sales = []
     
     new_sale_report = [] # Create a new sale report
-    for item, snapshot in zip(sales_report, current_sale_snapshot):
-        if snapshot not in seen_sales:
-            new_sale_report.append(item)
+    for snapshot, sales_report in sale_items:
+         if snapshot not in seen_sales:
+              new_sale_report.append(sales_report)
     
     # Fresh data? Ping it to Discord!
     if new_sale_report:
@@ -64,17 +75,7 @@ def check_steam_prices():
     with open(CACHED_FILE, "w", encoding="utf-8") as f:
         f.write("\n".join(current_sale_snapshot))
 
-    try:
-        subprocess.run(["git", "config", "--global", "user.name", "github-actions[bot]"], check=True)
-        subprocess.run(["git", "config", "--global", "user.email", "github-actions[bot]@users.noreply.github.com"], check=True)
-        subprocess.run(["git", "add", CACHED_FILE], check=True)
-        subprocess.run(["git", "commit", "-m", f"Update Steam cache - {len(current_sale_snapshot)} sales"], check=True)
-        subprocess.run(["git", "push"], check=True)
-        print("Cache committed")
-    except subprocess.CalledProcessError:
-        print("Cache commit failed - probably no changes")
-    except Exception as e:
-        print(f"Cache commit error: {e}")
+    commit_github(CACHED_FILE, f"Update cache - {len(current_sale_snapshot)} sales")
 
 if __name__ == "__main__":
     check_steam_prices()
