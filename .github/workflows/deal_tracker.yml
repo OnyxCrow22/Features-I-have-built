@@ -1,0 +1,22 @@
+# .github/workflows/deals.yml
+name: Deals Tracker
+on:
+  repository_dispatch:
+    types: [trigger-deals]
+
+jobs:
+  run-deals:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: pip install requests feedparser beautifulsoup4
+      - name: Check Steam Deals
+        run: python Nexus_System/modules/steam_price_tracker.py
+        env:
+          GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
+      - name: Check Epic Free Games
+        run: python Nexus_System/modules/epic_freebies.py
+        env:
+          GAMING_PRICE_WEBHOOK_URL: ${{ secrets.GAMING_PRICE_WEBHOOK_URL }}
