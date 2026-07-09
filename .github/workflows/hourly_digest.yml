@@ -1,5 +1,7 @@
 name: Hourly Digest - Deals & News
 on:
+  repository_dispatch:
+    types: [trigger-news] # Allows the API to be alerted.
   workflow_dispatch:
 
 permissions:
@@ -12,7 +14,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 
+          fetch-depth: 0
         
       - name: Set up Python
         uses: actions/setup-python@v5
