@@ -15,7 +15,7 @@ def check_steam_prices():
     WISHLIST_FILE = os.path.join(script_dir, "wishlist.txt")
     CACHED_FILE = os.path.join(script_dir, "steam_cache.txt")
     
-    sales_report = [] # New list for listing everything on sale
+    sale_alerts = [] # New list for listing everything on sale
     current_sale_snapshot = [] # Track the current snapshot
 
     try:
@@ -30,7 +30,7 @@ def check_steam_prices():
             response = requests.get(url, timeout=10)
             response.raise_for_status()
             json_data = response.json()
-            app_data = response.get(app_id, {})
+            app_data = json_data.get(app_id, {})
 
         except Exception as SE:
             print(f"Failed to fetch {app_id}! {SE}")
@@ -40,18 +40,16 @@ def check_steam_prices():
                 data = app_data["data"]
                 price_info = data.get("price_overview")
 
-        sale_items = []
+                if price_info and price_info["discount_percent"] > 0:
+                    name = data["name"]
+                    price = price_info["final_formatted"]
+                    discount = price_info["discount_percent"]
 
-        if price_info and price_info["discount_percent"] > 0:
-                name = data["name"]
-                price = price_info["final_formatted"]
-                discount = price_info["discount_percent"]
+                    snapshot_str = f"{app_id}_{discount}"
+                    current_sale_snapshot.append(snapshot_str)
 
-                snapshot_str = f"{app_id}_{discount}"
-                current_sale_snapshot.append(snapshot_str)
-
-                alert_msg = (f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
-                sales_report.append((snapshot_str, alert_msg))
+                    alert_msg = (f"**{name}** is currently **{discount}% off**! The current price is **{price}**")
+                    sale_alerts.append((snapshot_str, alert_msg))
 
     # Load the previous cached file
     if (os.path.exists(CACHED_FILE)):
@@ -61,7 +59,7 @@ def check_steam_prices():
         seen_sales = []
     
     new_sale_report = [] # Create a new sale report
-    for snapshot, sales_report in sale_items:
+    for snapshot, sales_report in sale_alerts:
          if snapshot not in seen_sales:
               new_sale_report.append(sales_report)
     
