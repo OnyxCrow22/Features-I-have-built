@@ -3,6 +3,9 @@ name: Deals Tracker
 on:
   workflow_dispatch: # Allows manual runs from GitHub UI
 
+permissions: #
+  contents: write
+
 jobs:
   run-deals:
     runs-on: ubuntu-latest
