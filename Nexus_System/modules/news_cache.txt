@@ -3,10 +3,10 @@ https://www.bbc.co.uk/news/articles/ced47jqyg1eo
 https://www.bbc.co.uk/news/articles/c3eyq2np7qgo
 https://www.bbc.co.uk/news/articles/c77y0n7k801o
 https://www.bbc.co.uk/news/articles/c8e2382jk7jo
-https://www.bbc.co.uk/sport/football/articles/c3eyqdwq392o
+https://www.bbc.co.uk/sport/tennis/articles/cpq30vnj7jlo
 https://www.bbc.co.uk/news/articles/cj6g41pzy41o
 https://www.bbc.co.uk/weather/articles/c0my38l4ex3o
-https://www.bbc.co.uk/news/articles/cgjxqq9jg8yo
+https://www.bbc.co.uk/sport/football/articles/c3eyqdwq392o
 https://www.bbc.co.uk/news/articles/c5yzd5lykv6o
 https://news.sky.com/story/wildfire-kills-at-least-12-in-southern-spain-13562150
 https://news.sky.com/story/hosepipe-ban-for-millions-more-people-as-latest-heatwave-increases-risk-of-drought-conditions-13562148
@@ -25,6 +25,6 @@ https://www.theguardian.com/news/audio/2026/jul/10/the-missing-scientists-at-the
 https://www.theguardian.com/lifeandstyle/2026/jul/10/my-holiday-from-hell-i-stood-on-a-sea-urchin-and-felt-stabbing-pain-and-outrageous-fury
 https://www.theguardian.com/artanddesign/2026/jul/10/the-hay-wain-walking-constables-landscape-christchurch-mansion-ipswich
 https://www.theguardian.com/politics/2026/jul/09/police-investigate-500000-reform-donations-from-mother-of-fraudster-who-backed-farage
+https://www.theguardian.com/world/2026/jul/10/wildfire-southern-spain-temperatures-almeria-los-gallardos-bedar
 https://www.theguardian.com/politics/2026/jul/09/andy-burnham-labour-didnt-get-it-right-stance-gaza-war
 https://www.theguardian.com/politics/2026/jul/10/ann-widdecombe-former-tory-mp-and-reform-uk-member-dies-aged-78
-https://www.theguardian.com/business/2026/jul/10/rachel-reeves-city-skills-compact-ai-training
