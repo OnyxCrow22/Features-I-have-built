@@ -35,14 +35,15 @@ def normalise_link(URL): # Stop news from spamming
 def check_headlines():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     CACHED_FILE = os.path.join(script_dir, "news_cache.txt")
+    
+    # Words that should be blocked
+    BLOCKLIST = ["sponsored", "advertorial", "promoted", "ad:"]
 
     # The news sources supplied
     NEWS_SOURCE = {
-        "BBC News": "https://feeds.bbci.co.uk/news/rss.xml",
-        "Sky News": "https://feeds.skynews.com/feeds/rss/home.xml",
-        "The Guardian": "https://www.theguardian.com/uk/rss",
-        "Reuters": "https://feeds.reuters.com/reuters/UKTopNews",
-        
+        "UK News": "https://news.google.com/rss/topics/CAAqJQgKIh9DQkFTRVFvSUwyMHZNRGR6YzJNU0JXVnVMVWRDS0FBUAE?hl=en-GB&gl=GB&ceid=GB%3Aen",
+        "International News": "https://news.google.com/rss/topics/CAAqKggKIiRDQkFTRlFvSUwyMHZNRGx1YlY4U0JXVnVMVWRDR2dKSFFpZ0FQAQ?hl=en-GB&gl=GB&ceid=GB%3Aen",
+        "Local News": "https://news.google.com/rss/topics/CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE/sections/CAQiUENCSVNOam9JYkc5allXeGZkakpDRUd4dlkyRnNYM1l5WDNObFkzUnBiMjV5Q3hJSkwyMHZNREUzTkhGdGVnc0tDUzl0THpBeE56UnhiU2dBKjEIACotCAoiJ0NCSVNGem9JYkc5allXeGZkako2Q3dvSkwyMHZNREUzTkhGdEtBQVABUAE?hl=en-GB&gl=GB&ceid=GB%3Aen"
     }
 
     try:
@@ -72,6 +73,13 @@ def check_headlines():
 
                     if not link:
                         continue
+                    
+                    # --- BLOCKLIST CHECK ---
+                    content_to_check = (title + " " + description).lower()
+                    if any(term in content_to_check for term in BLOCKLIST):
+                        print(f"Skipping blocked content: {title}")
+                        continue
+                    # -----------------------
 
                     clean_link = normalise_link(link)
 
