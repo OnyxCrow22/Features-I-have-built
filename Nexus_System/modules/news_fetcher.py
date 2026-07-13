@@ -109,7 +109,7 @@ def check_headlines():
                         clean_description = clean_html(description)
 
                         if len(clean_description) > 250:
-                            clean_description = clean_description[:247] + "..."
+                            clean_description = clean_description[:150] + "..."
                         formatted_story = f"**{title}**\n>{clean_description}\n{link}"
                         new_stories.append(formatted_story)
 
