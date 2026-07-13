@@ -28,9 +28,15 @@ def commit_github(cache_path, commit_message="Update cache"):
         
         # Check if there are staged changes
         result = subprocess.run(["git", "diff", "--cached", "--quiet"])
-        if result.returncode!= 0: # 1 = changes exist
+        if result.returncode != 0: 
             subprocess.run(["git", "commit", "-m", commit_message], check=True)
-            subprocess.run(["git", "push"], check=True)
+            
+            # --- SYNC STEP ---
+            # Fetch and rebase to incorporate remote changes before pushing
+            subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
+            # -----------------
+            
+            subprocess.run(["git", "push", "origin", "main"], check=True)
             print(f"Committed {os.path.basename(cache_path)}")
             return True
         else:
