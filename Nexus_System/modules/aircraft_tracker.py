@@ -87,8 +87,8 @@ def check_local_airspace():
             if dist > RADIUS_KM:
                 continue # Too far away from the current location
             
-            registration = flight.get('r', '').strip.upper() # Get the flight's registration
-            is_watched = any(item in callsign or item in icao24 for item in WATCHLIST) # Is the aircraft being watched?
+            registration = flight.get('r', '').strip().upper() # Get the flight's registration
+            is_watched = any(item in callsign or item in icao24 for item in registration for item in WATCHLIST) # Is the aircraft being watched?
             is_uncommon = "MIL" in callsign or "RESCUE" in callsign or flight.get('type') == "MILT" # Is the aircraft uncommon?
 
             if is_watched or is_uncommon:
