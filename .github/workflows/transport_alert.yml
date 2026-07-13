@@ -28,6 +28,6 @@ jobs:
         run: pip install requests
           
       - name: Check Southern Services
-        run: python Nexus_System/modules/train_monitor.py
+        run: python Nexus_System/modules/train_monitoring.py
         env:
           TRAINS_WEBHOOK_URL: ${{ secrets.TRAINS_WEBHOOK_URL }}
