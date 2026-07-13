@@ -30,4 +30,4 @@ jobs:
       - name: Check Southern Services
         run: python "Nexus_System/modules/Southern Bot Check.py"
         env:
-          TRAIN_WEBHOOK_URL: ${{ secrets.TRAIN_WEBHOOK_URL }}
+          TRAINS_WEBHOOK_URL: ${{ secrets.TRAINS_WEBHOOK_URL }}
