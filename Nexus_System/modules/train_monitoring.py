@@ -111,13 +111,26 @@ def check_trains():
                 current_active_alerts.append(snapshot)
 
                 if snapshot not in sent_alerts:
-                        message = (f"**Southern alert!**\n"
-                                   f"The **{scheduled}** Southern service ({route_name}) "
-                                   f"is running **{delay_amount} minutes late**\n"
-                                   f"⚠️**Reason:** {delay_reason}")
-                        # Send to Discord
-                        send_discord_alert("trains", message)
-                        time.sleep(5)
+                    
+                    # Direction-aware urgency logic
+                    if delay_amount >= 30 or estimated == "Delayed":
+                        if from_st == "HMD" and to_st == "MCB":
+                            urgency_msg = "🚨 **SEVERE DELAYS!** Do not travel. Study from home!"
+                        elif from_st == "MCB" and to_st == "HMD":
+                            urgency_msg = "🚨 **SEVERE DELAYS!** Get home quickly!"
+                        else:
+                            urgency_msg = "🚨 **DO NOT TRAVEL if you can!** Get home immediately or find another route."
+                    else:
+                        urgency_msg = f"⚠️ **Reason:** {delay_reason}"
+
+                    message = (f"**Southern alert!**\n"
+                               f"The **{scheduled}** Southern service ({route_name}) "
+                               f"is running **{delay_amount} minutes late**\n"
+                               f"{urgency_msg}")
+                    
+                    # Send to Discord
+                    send_discord_alert("trains", message)
+                    time.sleep(5)
 
     # Save platform history
     with open(PLATFORM_CACHE, "w") as f:
