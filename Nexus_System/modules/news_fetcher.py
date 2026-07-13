@@ -12,17 +12,22 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert, commit_github
 
 def clean_html(text):
-    # Remove junk from RSS feed
     if not text:
         return ""
     
     # Remove HTML tags
     clean = re.sub(r'<[^>]+>', '', text)
-
-    # Decode HTML attributes
-    clean = clean.replace('&nbsp; ', ' ').replace('&amp;', '&').replace('&gt;', '>').replace('&quot;', '"')
+    
+    # Improved decoding and cleanup
+    clean = clean.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&gt;', '>').replace('&quot;', '"')
+    
+    # Strip away common repeating junk patterns often found in Google News RSS
+    # This removes redundant repeating news source mentions
+    clean = re.sub(r'(\w+&nbsp;)+', '', clean)
+    
+    # Final cleanup of multiple spaces
     clean = re.sub(r'\s+', ' ', clean).strip()
-    return clean # Finish cleaning up
+    return clean
 
 def normalise_link(URL): # Stop news from spamming
     if not URL:
