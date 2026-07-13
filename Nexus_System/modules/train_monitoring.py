@@ -16,7 +16,7 @@ ALERT_CACHE = os.path.join(script_dir, "train_status_cache.txt")
 PLATFORM_CACHE = os.path.join(script_dir, "platform_history.txt")
 
 # Journey details, which the bot will use to alert me of issues
-config_path = os.path.join(script_dir, "routes.json")
+config_path = os.path.join(script_dir, "train_routes.json")
 with open(config_path, "r") as f:
     ROUTES = json.load(f)
 
