@@ -47,7 +47,7 @@ def check_local_airspace():
                  "GBYDB", "FHMEL", "GJPT", "GEWIZ", "GNGTC", "GIIRP", "GBPLM",
                  "GHJSS", "GAYIJ", "GJJGI", "GBSET", "GCCXB", "GSPRX", "GSPRK", "FAYSB",
                  "FHUSA", "DLZFN", "RED1", "RED2", "RED3", "RED4", "RED5", "RED6", "RED7", "UAE", "ETIHAD", "EMIRATES",
-                 "CGFMX", "GAF359", "LNDHY", "LNDHZ", "JAL"]
+                 "CGFMX", "GAF359", "LNDHY", "LNDHZ", "JAL", "GPMNF", "GCBUI"]
 
     url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}" # The Uniform Resource Locator for fetching the data
 
