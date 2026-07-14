@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import math
+import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert, commit_github
@@ -35,21 +36,28 @@ def current_location():
 def check_local_airspace():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     AIRCRAFT_FILE = os.path.join(script_dir, "aircraft_cache.txt")
+    WATCHLIST_FILE = os.path.join(script_dir, "watchlist.json")
 
     # --- CONFIGURATION ---
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
     RADIUS_KM = 19 # 11 Miles
 
-    # Aircraft to monitor:
-    WATCHLIST = ["ZA947", "PA474", "GBMSB", "GAIDN", "GAWGB",
-                 "GMCSW", "GCCA", "GCICK", "MIL", "SPMIL", "ZZ334", "RRR", "GMRLL", "ZK313",
-                 "ZK317", "P7350", "AB910", "TE311", "LF363", "PZ865", "GBYWT",
-                 "GBYDB", "FHMEL", "GJPT", "GEWIZ", "GNGTC", "GIIRP", "GBPLM",
-                 "GHJSS", "GAYIJ", "GJJGI", "GBSET", "GCCXB", "GSPRX", "GSPRK", "FAYSB",
-                 "FHUSA", "DLZFN", "RED1", "RED2", "RED3", "RED4", "RED5", "RED6", "RED7", "UAE", "ETIHAD", "EMIRATES",
-                 "CGFMX", "GAF359", "LNDHY", "LNDHZ", "JAL", "GPMNF", "GCBUI"]
+    # Load Watchlist from JSON
+    try:
+        if os.path.exists(WATCHLIST_FILE):
+            with open(WATCHLIST_FILE, "r") as f:
+                watchlist_data = json.load(f)
+        else:
+            watchlist_data = {"registrations": [], "callsigns": []}
+    except Exception as e:
+        print(f"Failed to load watchlist JSON: {e}")
+        watchlist_data = {"registrations": [], "callsigns": []}
 
-    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}" # The Uniform Resource Locator for fetching the data
+    # Normalize tracking terms to uppercase for reliable matching
+    watch_regs = {reg.strip().upper() for reg in watchlist_data.get("registrations", [])}
+    watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
+
+    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}"
 
     try:
         if os.path.exists(AIRCRAFT_FILE):
@@ -75,9 +83,9 @@ def check_local_airspace():
 
         for flight in aircraft_list:
             icao24 = flight.get('hex', '').strip().lower() # Get the ICAO code
-            callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get the callsign, if known
-            on_ground = flight.get('ground', False) # Check whether the aircraft is on the ground or in the air
-            lat = flight.get('lat') # Lat and Lon from ADSB
+            callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get the callsign
+            on_ground = flight.get('ground', False) # Check ground status
+            lat = flight.get('lat') 
             lon = flight.get('lon')
 
             if on_ground or not lat or not lon:
@@ -87,24 +95,29 @@ def check_local_airspace():
             if dist > RADIUS_KM:
                 continue # Too far away from the current location
             
-            registration = flight.get('r', '').strip().upper() # Get the flight's registration
-            is_watched = any(item in callsign or item in icao24 for item in registration for item in WATCHLIST) # Is the aircraft being watched?
-            is_uncommon = "MIL" in callsign or "RESCUE" in callsign or flight.get('type') == "MILT" # Is the aircraft uncommon?
+            registration = flight.get('r', '').strip().upper() # Get registration
+            
+            # Match directly against registration, or partially check if any watched callsign is inside the flight callsign
+            is_watched = (
+                (registration and registration in watch_regs) or 
+                any(item in callsign for item in watch_callsigns)
+            )
+            is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
 
             if is_watched or is_uncommon:
                 if icao24 not in previously_seen_icaos:
                     source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
 
-                    registration = flight.get('r') or "Unknown"
+                    registration_label = registration if registration else "Unknown"
                     aircraft_type = flight.get('t') or "Unknown"
 
                     message = (
                         f"**{source_label}**\n"
                         f"✈️ **Callsign:** {callsign} \n"
-                        f"📝 **{registration}** | **Type:** {aircraft_type}\n"
+                        f"📝 **{registration_label}** | **Type:** {aircraft_type}\n"
                         f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}km\n"
                         f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
-                        )
+                    )
                     new_alert.append(message)
                     newly_alerted_aircraft.append(icao24)
 
@@ -129,5 +142,3 @@ if __name__ == "__main__":
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
     print("Scanning EWS area for aircraft...")
     check_local_airspace()
-
-            
