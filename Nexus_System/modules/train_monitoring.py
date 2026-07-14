@@ -111,9 +111,17 @@ def check_trains():
                 current_active_alerts.append(snapshot)
 
                 if snapshot not in sent_alerts:
+                    # Explicitly check if the system says it is indefinitely "Delayed"
+                    is_indefinite_delay = (estimated == "Delayed")
                     
+                    # Determine the delay text to display
+                    if is_indefinite_delay:
+                        delay_text = "Delayed indefinitely"
+                    else:
+                        delay_text = f"running {delay_amount} minutes late"
+
                     # Direction-aware urgency logic
-                    if delay_amount >= 30 or estimated == "Delayed":
+                    if delay_amount >= 30 or is_indefinite_delay:
                         if from_st == "HMD" and to_st == "MCB":
                             urgency_msg = "🚨 **SEVERE DELAYS!** Do not travel. Study from home!"
                         elif from_st == "MCB" and to_st == "HMD":
@@ -125,7 +133,7 @@ def check_trains():
 
                     message = (f"**Southern alert!**\n"
                                f"The **{scheduled}** Southern service ({route_name}) "
-                               f"is running **{delay_amount} minutes late**\n"
+                               f"is **{delay_text}**\n"
                                f"{urgency_msg}")
                     
                     # Send to Discord
