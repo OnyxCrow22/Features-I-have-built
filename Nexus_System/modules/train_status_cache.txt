@@ -2,3 +2,4 @@
 09:09_Brighton to London Victoria_Cancelled
 09:39_Brighton to London Victoria_Cancelled
 10:09_Brighton to London Victoria_Cancelled
+10:39_Brighton to London Victoria_Cancelled
