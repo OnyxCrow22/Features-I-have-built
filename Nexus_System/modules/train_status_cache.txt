@@ -2,3 +2,5 @@
 11:09_Brighton to London Victoria_Cancelled
 11:39_Brighton to London Victoria_Cancelled
 12:09_Brighton to London Victoria_Cancelled
+12:39_Brighton to London Victoria_Cancelled
+11:23_Eastbourne to St Leonards Warrior Square_5 minutes
