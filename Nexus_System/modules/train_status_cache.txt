@@ -1,6 +1,2 @@
-11:39_Brighton to London Victoria_Cancelled
-12:09_Brighton to London Victoria_Cancelled
-12:39_Brighton to London Victoria_Cancelled
-13:09_Brighton to London Victoria_Cancelled
-13:39_Brighton to London Victoria_Cancelled
-12:11_Eastbourne to St Leonards Warrior Square_5 minutes
+12:00_Hampden Park to St Leonards Warrior Square_14 minutes
+13:00_St Leonards Warrior Square to Hampden Park._5 minutes
