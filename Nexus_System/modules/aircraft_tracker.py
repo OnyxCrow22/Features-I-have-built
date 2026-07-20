@@ -6,6 +6,7 @@ import math
 import json
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from shared_utility import send_discord_alert, commit_github
 
 def haversine(lat1, lon1, lat2, lon2):
@@ -36,7 +37,7 @@ def current_location():
 def check_local_airspace():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     AIRCRAFT_FILE = os.path.join(script_dir, "aircraft_cache.txt")
-    WATCHLIST_FILE = os.path.join(script_dir, "watchlist.json")
+    WATCHLIST_FILE = os.path.join(script_dir, "aircraft_watchlist.json")
 
     # --- CONFIGURATION ---
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
