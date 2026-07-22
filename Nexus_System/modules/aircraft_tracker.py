@@ -41,7 +41,7 @@ def check_local_airspace():
 
     # --- CONFIGURATION ---
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
-    RADIUS_KM = 19 # 11 Miles
+    RADIUS_KM = 50 # 30 Miles
 
     # Load Watchlist from JSON
     try:
