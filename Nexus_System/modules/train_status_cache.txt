@@ -2,5 +2,3 @@
 11:59_Hampden Park to Moulsecoomb_Cancelled
 11:02_Moulsecoomb to Hampden Park_Cancelled
 12:02_Moulsecoomb to Hampden Park_Cancelled
-11:00_Hampden Park to St Leonards Warrior Square_5 minutes
-11:00_St Leonards Warrior Square to Hampden Park._5 minutes
