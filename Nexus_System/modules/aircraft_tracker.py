@@ -60,27 +60,36 @@ def check_local_airspace():
 
     url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}"
 
-    try:
-        if os.path.exists(AIRCRAFT_FILE):
-            with open(AIRCRAFT_FILE, "r") as f:
-                previously_seen_icaos = {line.strip() for line in f if line.strip()}
-        else:
-            previously_seen_icaos = set()
+    currentTime = time.time()
+    CACHE_EXPIRY_SECONDS = 10800
 
+
+    seen_cache = {}
+    if os.path.exists(AIRCRAFT_FILE):
+            with open(AIRCRAFT_FILE, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if "|" in line:
+                        ac_ICAO, ts = line.split("|")
+                        try:
+                            if currentTime - float(ts) < CACHE_EXPIRY_SECONDS:
+                                seen_cache[ac_ICAO.lower()] = float(ts)
+                        except ValueError:
+                            continue
+                    elif line:
+                        seen_cache[line.lower()] = currentTime
+
+    try:
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         aircraft_list = response.json().get('ac', [])
         
         if not aircraft_list:
             print(f"Target airspace is currently void of targeted aircraft at the moment.")
-            # clear cache
-            with open(AIRCRAFT_FILE, "w") as f:
-                f.write("")
-            commit_github(AIRCRAFT_FILE, "Clear Aircraft cache")
             return
             
         new_alert = [] # New list for alerts
-        newly_alerted_aircraft = [] # The aircraft currently being tracked by the Discord bot
+        processed_aircraft = set() # The aircraft currently being tracked by the Discord bot
 
         for flight in aircraft_list:
             icao24 = flight.get('hex', '').strip().lower() # Get the ICAO code
@@ -89,8 +98,11 @@ def check_local_airspace():
             lat = flight.get('lat') 
             lon = flight.get('lon')
 
-            if on_ground or not lat or not lon:
+            if on_ground or not lat or not lon or not icao24:
                 continue # Not worth tracking
+
+            if icao24 in processed_aircraft:
+                continue # Do not log again
 
             dist = haversine(CURRENT_LAT, CURRENT_LON, lat, lon)
             if dist > RADIUS_KM:
@@ -106,7 +118,10 @@ def check_local_airspace():
             is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
 
             if is_watched or is_uncommon:
-                if icao24 not in previously_seen_icaos:
+
+                processed_aircraft.add(icao24) # Mark aircraft as tracked
+
+                if icao24 not in seen_cache:
                     source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
 
                     registration_label = registration if registration else "Unknown"
@@ -114,27 +129,29 @@ def check_local_airspace():
 
                     message = (
                         f"**{source_label}**\n"
-                        f"✈️ **Callsign:** {callsign} \n"
-                        f"📝 **{registration_label}** | **Type:** {aircraft_type}\n"
+                        f"✈️ **Aircraft Callsign:** {callsign} \n"
+                        f"📝 **Aircraft Registration: {registration_label}** | **Type:** {aircraft_type}\n"
                         f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}km\n"
                         f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
                     )
                     new_alert.append(message)
-                    newly_alerted_aircraft.append(icao24)
+                    seen_cache[icao24] = currentTime # Store in the cache
 
+        # Only send alert if a new aircraft is found
         if new_alert:
             for i, alert in enumerate(new_alert):
                 send_discord_alert("aircraft", alert)
                 if i < len(new_alert) - 1:
                     time.sleep(5)
 
-            with open(AIRCRAFT_FILE, "a") as f:
-                for ac in newly_alerted_aircraft:
-                    f.write(f"{ac}\n")
+            with open(AIRCRAFT_FILE, "w") as f:
+                for ac_ICAO, ts in seen_cache.items():
+                    f.write(f"{ac_ICAO}|{ts}\n")
 
-            commit_github(AIRCRAFT_FILE, "Update aircraft cache")
+            if new_alert:
+                commit_github(AIRCRAFT_FILE, "Update aircraft cache")
         else:
-            print("No aircraft detected :(")
+            print("No aircraft identified within target airspace.")
 
     except Exception as e:
         print(f"Unexpected error: {type(e).__name__}: {e}")
