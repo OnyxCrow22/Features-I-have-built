@@ -40,6 +40,9 @@ def check_trains():
     new_history = {}
     current_active_alerts = []
 
+    pending_alerts = [] # For the new alert system
+    disruption_score = 0 # 0 means no issues, 10 means widespread disruption
+
     for route in ROUTES:
         from_st = route["from"]
         to_st = route["to"]
@@ -72,7 +75,7 @@ def check_trains():
 
             # 1. Platform Change Detection
             if service_id in history and history[service_id] != platform and platform != "TBA":
-                message = (f"⚠️ **Platform Change!**\n"
+                message = (f"ℹ️ **Platform Change!**\n"
                            f"The **{scheduled}** service ({route_name}) "
                            f"has moved to **Platform {platform}**.")
                 send_discord_alert("trains", message)
@@ -94,51 +97,73 @@ def check_trains():
                 est_min = int(estimated.split(":")[0]) * 60 + int(estimated.split(":")[1])
                 delay_amount = max(0, est_min - sched_min)
 
+            is_indefinite_delay = (estimated == "Delayed")
+
             # Train is cancelled
             if is_cancelled:
                 snapshot = f"{scheduled}_{route_name}_Cancelled"
                 current_active_alerts.append(snapshot)
+                disruption_score += 1 # One point added
 
                 if snapshot not in sent_alerts:
-                    message = (f"**Southern Cancelled Train!!**\n"
-                               f"The **{scheduled}** Southern service ({route_name}) has been **cancelled**.\n"
-                               f"🚫**Reason:** {cancel_reason}")
-                    send_discord_alert("trains", message)
-                    time.sleep(5)
+                    pending_alerts.append({
+                        "snapshot": snapshot,
+                        "scheduled": scheduled,
+                        "route_name": route_name,
+                        "type": "cancelled",
+                        "reason": cancel_reason,
+                        "from_st": from_st,
+                        "to_st": to_st
+                    })
                 
-            elif delay_amount >= 5 or estimated == "Delayed":
+            elif delay_amount >= 5 or is_indefinite_delay:
                 snapshot = f"{scheduled}_{route_name}_{delay_amount} minutes"
                 current_active_alerts.append(snapshot)
 
+                IS_MAJOR = (delay_amount >= 30 or is_indefinite_delay)
+                if IS_MAJOR:
+                    disruption_score += 1
+
                 if snapshot not in sent_alerts:
-                    # Explicitly check if the system says it is indefinitely "Delayed"
-                    is_indefinite_delay = (estimated == "Delayed")
-                    
-                    # Determine the delay text to display
-                    if is_indefinite_delay:
-                        delay_text = "Delayed indefinitely"
-                    else:
-                        delay_text = f"running {delay_amount} minutes late"
+                    pending_alerts.append({
+                        "snapshot": snapshot,
+                        "scheduled": scheduled,
+                        "route_name": route_name,
+                        "type": "delayed",
+                        "delay_amount": delay_amount,
+                        "is_indefinite": is_indefinite_delay,
+                        "is_major": IS_MAJOR,
+                        "reason": delay_reason,
+                        "from_st": from_st,
+                        "to_st": to_st
+                    })
+    for ALERT in pending_alerts:
+        if ALERT[type] == "cancelled":
+            message = (f"❌ **Cancelled train!**\n"
+                       f"The **{ALERT['scheduled']}** service ({ALERT['route_name']}) has been **CANCELLED**\n"
+                       f"**Cause of Delay** {ALERT['reason']}")
 
-                    # Direction-aware urgency logic
-                    if delay_amount >= 30 or is_indefinite_delay:
-                        if from_st == "HMD" and to_st == "MCB":
-                            urgency_msg = "🚨 **SEVERE DELAYS!** Do not travel. Study from home!"
-                        elif from_st == "MCB" and to_st == "HMD":
-                            urgency_msg = "🚨 **SEVERE DELAYS!** Get home quickly!"
-                        else:
-                            urgency_msg = "🚨 **DO NOT TRAVEL if you can!** Get home immediately or find another route."
-                    else:
-                        urgency_msg = f"⚠️ **Reason:** {delay_reason}"
+        elif ALERT["type"] == "delayed":
+            delay_text = "Delayed indefinitely" if ALERT["is_indefinite"] else f"currently running {ALERT['delay_amount']} minutes late"
 
-                    message = (f"**Southern alert!**\n"
-                               f"The **{scheduled}** Southern service ({route_name}) "
-                               f"is **{delay_text}**\n"
-                               f"{urgency_msg}")
-                    
-                    # Send to Discord
-                    send_discord_alert("trains", message)
-                    time.sleep(5)
+            if ALERT['is_major'] and disruption_score >= 2: # Only alert if the score is equal or above two
+                if ALERT['from_st'] == "HMD" and ALERT['to_st'] == "MCB":
+                    severe_msg = "🛑 **SEVERE DELAYS REPORTED!** Do NOT travel. Complete work at home!"
+                elif ALERT['from_st'] == "MCB" and ALERT['to_st'] == "HMD":
+                    severe_msg = "🛑 **SEVERE DELAYS REPORTED!** GO HOME"
+                else:
+                    severe_msg = "🚨 **MULTIPLE ISSUES ACROSS THE NETWORK!!** Consider alternative transportation!"
+            else:
+                severe_msg = f"⚠️ **Reason cause** {ALERT['reason']}"
+
+            message = (f"⚠️**Service alert!\n"
+                       f"The **{ALERT['scheduled']}** service ({ALERT['route_name']})\n"
+                       f"is {delay_text}\n"
+                       f"{severe_msg}")
+
+        send_discord_alert("trains", message)
+        time.sleep(5)
+
 
     # Save platform history
     with open(PLATFORM_CACHE, "w") as f:
