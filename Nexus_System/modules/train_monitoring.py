@@ -138,7 +138,7 @@ def check_trains():
                         "to_st": to_st
                     })
     for ALERT in pending_alerts:
-        if ALERT[type] == "cancelled":
+        if ALERT["type"] == "cancelled":
             message = (f"❌ **Cancelled train!**\n"
                        f"The **{ALERT['scheduled']}** service ({ALERT['route_name']}) has been **CANCELLED**\n"
                        f"**Cause of Delay** {ALERT['reason']}")
