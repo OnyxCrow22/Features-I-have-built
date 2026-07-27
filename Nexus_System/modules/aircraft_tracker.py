@@ -132,18 +132,18 @@ def check_local_airspace():
                         f"**{source_label}**\n"
                         f"✈️ **Aircraft Callsign:** {callsign} \n"
                         f"📝 **Aircraft Registration: {registration_label}** | **Type:** {aircraft_type}\n"
-                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}miles\n"
+                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f} miles\n"
                         f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
                     )
                     new_alert.append(message)
                     seen_cache[icao24] = currentTime # Store in the cache
 
         # Only send alert if a new aircraft is found
-            if new_alert:
-                for i, alert in enumerate(new_alert):
-                    send_discord_alert("aircraft", alert)
-                    if i < len(new_alert) - 1:
-                        time.sleep(5)
+        if new_alert:
+            for i, alert in enumerate(new_alert):
+                send_discord_alert("aircraft", alert)
+                if i < len(new_alert) - 1:
+                    time.sleep(5)
 
         with open(AIRCRAFT_FILE, "w") as f:
             for ac_ICAO, ts in seen_cache.items():
