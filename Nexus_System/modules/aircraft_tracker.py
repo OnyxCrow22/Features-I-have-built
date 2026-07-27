@@ -132,7 +132,7 @@ def check_local_airspace():
                         f"**{source_label}**\n"
                         f"✈️ **Aircraft Callsign:** {callsign} \n"
                         f"📝 **Aircraft Registration: {registration_label}** | **Type:** {aircraft_type}\n"
-                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}km\n"
+                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f}miles\n"
                         f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
                     )
                     new_alert.append(message)
