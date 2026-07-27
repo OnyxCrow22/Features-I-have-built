@@ -10,7 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert, commit_github
 
 def haversine(lat1, lon1, lat2, lon2):
-    R = 6371
+    R = 3958.8 # Earth's radius in miles
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = (math.sin(dlat/2)**2 + math.cos(math.radians(lat1))
@@ -41,7 +41,8 @@ def check_local_airspace():
 
     # --- CONFIGURATION ---
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
-    RADIUS_KM = 50 # 30 Miles
+    RADIUS_MILES = 30 # 30 Miles
+    RADIUS_NM = int(RADIUS_MILES * 0.868976) # Convert mile into Nautical Mile.
 
     # Load Watchlist from JSON
     try:
@@ -58,7 +59,7 @@ def check_local_airspace():
     watch_regs = {reg.strip().upper() for reg in watchlist_data.get("registrations", [])}
     watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
 
-    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_KM}"
+    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
 
     currentTime = time.time()
     CACHE_EXPIRY_SECONDS = 10800
@@ -105,7 +106,7 @@ def check_local_airspace():
                 continue # Do not log again
 
             dist = haversine(CURRENT_LAT, CURRENT_LON, lat, lon)
-            if dist > RADIUS_KM:
+            if dist > RADIUS_MILES:
                 continue # Too far away from the current location
             
             registration = flight.get('r', '').strip().upper() # Get registration
@@ -138,18 +139,18 @@ def check_local_airspace():
                     seen_cache[icao24] = currentTime # Store in the cache
 
         # Only send alert if a new aircraft is found
-        if new_alert:
-            for i, alert in enumerate(new_alert):
-                send_discord_alert("aircraft", alert)
-                if i < len(new_alert) - 1:
-                    time.sleep(5)
-
-            with open(AIRCRAFT_FILE, "w") as f:
-                for ac_ICAO, ts in seen_cache.items():
-                    f.write(f"{ac_ICAO}|{ts}\n")
-
             if new_alert:
-                commit_github(AIRCRAFT_FILE, "Update aircraft cache")
+                for i, alert in enumerate(new_alert):
+                    send_discord_alert("aircraft", alert)
+                    if i < len(new_alert) - 1:
+                        time.sleep(5)
+
+        with open(AIRCRAFT_FILE, "w") as f:
+            for ac_ICAO, ts in seen_cache.items():
+                f.write(f"{ac_ICAO}|{ts}\n")
+
+        if new_alert:
+            commit_github(AIRCRAFT_FILE, "Update aircraft cache")
         else:
             print("No aircraft identified within target airspace.")
 

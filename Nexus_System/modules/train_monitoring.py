@@ -156,10 +156,11 @@ def check_trains():
             else:
                 severe_msg = f"⚠️ **Reason cause** {ALERT['reason']}"
 
-            message = (f"⚠️**Service alert!\n"
-                       f"The **{ALERT['scheduled']}** service ({ALERT['route_name']})\n"
-                       f"is {delay_text}\n"
-                       f"{severe_msg}")
+            message = (
+                f"⚠️**Service alert!**\n"
+                f"The **{ALERT['scheduled']}** service ({ALERT['route_name']})\n"
+                f"is {delay_text}\n"
+                f"{severe_msg}")
 
         send_discord_alert("trains", message)
         time.sleep(5)
