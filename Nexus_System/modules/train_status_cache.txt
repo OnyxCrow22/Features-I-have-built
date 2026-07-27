@@ -1,6 +1,5 @@
-17:29_Hampden Park to St Leonards Warrior Square_13 minutes
-17:54_Hampden Park to St Leonards Warrior Square_10 minutes
-18:29_Hampden Park to St Leonards Warrior Square_7 minutes
-18:55_Hampden Park to St Leonards Warrior Square_5 minutes
-18:16_St Leonards Warrior Square to Hampden Park._7 minutes
-18:29_St Leonards Warrior Square to Hampden Park._7 minutes
+17:54_Hampden Park to St Leonards Warrior Square_9 minutes
+18:29_Hampden Park to St Leonards Warrior Square_10 minutes
+18:55_Hampden Park to St Leonards Warrior Square_7 minutes
+18:16_St Leonards Warrior Square to Hampden Park._9 minutes
+18:29_St Leonards Warrior Square to Hampden Park._9 minutes
