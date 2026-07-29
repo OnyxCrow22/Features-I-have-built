@@ -1,5 +1,4 @@
-13:59_Hampden Park to Moulsecoomb_0 minutes
-15:02_Moulsecoomb to Hampden Park_0 minutes
-14:00_Hampden Park to St Leonards Warrior Square_20 minutes
+15:02_Moulsecoomb to Hampden Park_12 minutes
+14:27_Hampden Park to St Leonards Warrior Square_0 minutes
+15:14_Hampden Park to St Leonards Warrior Square_5 minutes
 14:29_St Leonards Warrior Square to Hampden Park._Cancelled
-14:59_St Leonards Warrior Square to Hampden Park._10 minutes
