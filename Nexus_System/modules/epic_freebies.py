@@ -54,8 +54,7 @@ def check_epic_freebies():
 
         if os.path.exists(CACHED_FILE):
              with open(CACHED_FILE, "r") as f:
-                  seen_games = [line.strip() for line in f]
-
+                  seen_games = {line.strip() for line in f if line.strip()}
         else:
              seen_games = set()
 
@@ -65,14 +64,15 @@ def check_epic_freebies():
         if new_game:
             message = "Epic Games are currently giving these freebies this week: \n" + "\n".join([f"- {game}" for game in new_game])
             send_discord_alert("gaming_price", message)
+
+            
+            # Updates the cached file, preventing duplicate announcments every two hours.
+            with open (CACHED_FILE, "w") as f:
+                f.write("\n".join(current_free_game))
+
+            commit_github(CACHED_FILE, f"Update Epic cache - {len(current_free_game)} free games")
         else:
             print("No freebies found")
-
-            # Updates the cached file, preventing duplicate announcments every two hours.
-        with open (CACHED_FILE, "w") as f:
-            f.write("\n".join(current_free_game))
-
-        commit_github(CACHED_FILE, f"Update Epic cache - {len(current_free_game)} free games")
 
     except Exception as e:
         print(f"Failed to find Free games! {e}")

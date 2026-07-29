@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared_utility import send_discord_alert, commit_github
 
-# --- Configuration & Memory ---
+# --- CONFIGURATION, MEMORY AND ROUTES --------------------- #
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Cache the trains into this file to prevent duplicate alerts
 ALERT_CACHE = os.path.join(script_dir, "train_status_cache.txt")
@@ -16,52 +16,119 @@ ALERT_CACHE = os.path.join(script_dir, "train_status_cache.txt")
 PLATFORM_CACHE = os.path.join(script_dir, "platform_history.txt")
 
 # Journey details, which the bot will use to alert me of issues
-config_path = os.path.join(script_dir, "train_routes.json")
-with open(config_path, "r") as f:
-    ROUTES = json.load(f)
+CONFIGURATION_PATH = os.path.join(script_dir, "train_routes.json")
 
-def check_trains():
-    # Load previously alerted bad events
-    if os.path.exists(ALERT_CACHE):
-        with open(ALERT_CACHE, "r") as f:
-            sent_alerts = {line.strip() for line in f if line.strip()}
-    else:
-        sent_alerts = set()
+def load_routes():
+    if os.path.exists(CONFIGURATION_PATH):
+        with open(CONFIGURATION_PATH, "r") as f:
+            return json.load(f)
+    return []
 
-    # Load platform history
-    history = {}
-    if os.path.exists(PLATFORM_CACHE):
-        with open(PLATFORM_CACHE, "r") as f:
+# ---------------------------- ALERT CACHE MANAGEMENT ---------------------- #
+
+def LOAD_alert_cache(CACHED_FILE):
+    if os.path.exists(CACHED_FILE):
+        with open(CACHED_FILE, "r") as f:
+            return {line.strip() for line in f if line.strip()}
+    return set()
+
+def SAVE_alert_cache(CACHED_FILE, CURRENT_ALERTS):
+    with open(CACHED_FILE, "w") as f:
+        f.write("\n".join(CURRENT_ALERTS))
+    commit_github(CACHED_FILE, f"Update Train Cache - {len(CURRENT_ALERTS)} issues")
+
+# --------------------------- PLATFORM CACHE MANAGEMENT -------------------- #
+
+def LOAD_platform_history(CACHED_FILE):
+    plat_history = {}
+    if os.path.exists(CACHED_FILE):
+        with open(CACHED_FILE, "r") as f:
             for line in f:
-                if '|' in line:
-                    sid, plat = line.strip().split('|')
-                    history[sid] = plat
+                if "|" in line:
+                    sid, plat = line.strip().split("|")
+                    plat_history[sid] = plat
+    return plat_history
 
+def SAVE_platform_history(CACHED_FILE, PLATFORM_DATA):
+    with open(CACHED_FILE, "w") as f:
+        for sid, plat in PLATFORM_DATA.items():
+            f.write(f"{sid}|{plat}\n")
+
+# --------------------------- DELAY CALCULATOR --------------------------- #
+def calculate_delay(scheduled, estimated):
+    if estimated and estimated.replace(":", "").isdigit():
+        try: 
+            sched_min = int(scheduled.split(":")[0]) * 60 + int(scheduled.split(":")[1])
+            est_min = int(estimated.split(":")[0]) * 60 + int(estimated.split(":")[1])
+            return max(0, est_min - sched_min)
+        except (ValueError, IndexError):
+            pass
+    return 0
+
+# ----------------------- ROUTE DATA ----------------------------- #
+def route_data(from_st, to_st):
+    url = f"https://huxley2.azurewebsites.net/departures/{from_st}/to/{to_st}" 
+
+    try:
+            responses = requests.get(url, timeout=10)
+            responses.raise_for_status()
+            return responses.json().get("trainServices", [])
+    except Exception as e:
+            print(f"Network error detected in checking {from_st}->{to_st}: {e}")
+            return []
+
+# ------------------- MESSAGE FORMATTERS ---------------------- #
+def format_platform_msg(scheduled, route_name, platform_num):
+    return (
+        f"ℹ️ **Platform Change!**\n"
+        f"The **{scheduled}** service ({route_name}) "
+        f"has moved to **Platform {platform_num}**."
+    )
+
+def format_alert_msg(alert, disruption_score):
+    if alert["type"] == "cancelled":
+        return (
+            f"❌ **Train cancellation!**\n"
+            f"The **{alert['scheduled']}** service {alert['route_name']} has been CANCELLED!\n"
+            f"**This is because of**: {alert['reason']}"
+        )
+
+
+    delay_text = "Delayed Indefinitely" if alert['is_indefinite'] else f"This train is currently running **{alert['delay_amount']} minutes late**"
+
+    if alert['is_major'] and disruption_score >= 4: # Only alert if the score is equal or above two
+        if alert['from_st'] == "HMD" and alert['to_st'] == "MCB":
+            severe_msg = "🛑 **SEVERE DELAYS REPORTED!**: Do NOT travel. Complete work at home!"
+        elif alert['from_st'] == "MCB" and alert['to_st'] == "HMD":
+            severe_msg = "🛑 **SEVERE DELAYS REPORTED!**: GO HOME"
+        else:
+            severe_msg = "🚨 **MULTIPLE ISSUES ACROSS THE NETWORK!!**: Consider alternative transportation!"
+    else:
+        severe_msg = f"⚠️ **This is because of**: {alert['reason']}"
+
+    return (
+        f"⚠️**Service delay alert!**\n"
+        f"The **{alert['scheduled']}** service ({alert['route_name']})\n"
+        f"is {delay_text}\n"
+        f"{severe_msg}"
+    )
+ 
+def check_trains():
+    routes = load_routes() # Load the routes
+    sent_alerts = LOAD_alert_cache(ALERT_CACHE) # Load the alert cached file
+    history = LOAD_platform_history(PLATFORM_CACHE) # Load the platform alert cache file
+    
     new_history = {}
     current_active_alerts = []
-
     pending_alerts = [] # For the new alert system
     disruption_score = 0 # 0 means no issues, 10 means widespread disruption
 
-    for route in ROUTES:
+    for route in routes:
         from_st = route["from"]
         to_st = route["to"]
         route_name = route["name"]
 
-        # Gets the train data from the Huxley API.
-        url = f"https://huxley2.azurewebsites.net/departures/{from_st}/to/{to_st}" 
-
-        try:
-            responses = requests.get(url, timeout=10)
-            responses.raise_for_status()
-            data = responses.json()
-        except Exception as e:
-            print(f"Network error detected in checking for {route_name}: {e}")
-            continue
-
-        # Get a list of the train services on that explicit route.
-        train_services = data.get("trainServices", []) 
-
+        train_services = route_data(from_st, to_st)
         if not train_services:
             continue 
         
@@ -71,32 +138,23 @@ def check_trains():
             scheduled = train.get("std") 
             estimated = train.get("etd") 
             delay_reason = train.get("delayReason", "No reason provided.")
+            cancel_reason = train.get("cancelReason", "No reason provided.")
+            is_cancelled = train.get("isCancelled", False)
             platform = train.get("platform") or "TBA"
 
-            # 1. Platform Change Detection
+            # Platform Change Detection
             if service_id in history and history[service_id] != platform and platform != "TBA":
-                message = (f"ℹ️ **Platform Change!**\n"
-                           f"The **{scheduled}** service ({route_name}) "
-                           f"has moved to **Platform {platform}**.")
-                send_discord_alert("trains", message)
+                plat_msg = format_platform_msg(scheduled, route_name, platform)
+                send_discord_alert("trains", plat_msg)
                 time.sleep(2)
             
             new_history[service_id] = platform
-
-            # Get the cancellation status
-            is_cancelled = train.get("isCancelled", False)
-            cancel_reason = train.get("cancelReason", "No reason provided.")
 
             if not scheduled:
                 continue
 
             # Calculate delay
-            delay_amount = 0
-            if estimated and estimated.replace(":", "").isdigit():
-                sched_min = int(scheduled.split(":")[0]) * 60 + int(scheduled.split(":")[1])
-                est_min = int(estimated.split(":")[0]) * 60 + int(estimated.split(":")[1])
-                delay_amount = max(0, est_min - sched_min)
-
+            delay_amount = calculate_delay(scheduled, estimated)
             is_indefinite_delay = (estimated == "Delayed")
 
             # Train is cancelled
@@ -137,45 +195,14 @@ def check_trains():
                         "from_st": from_st,
                         "to_st": to_st
                     })
-    for ALERT in pending_alerts:
-        if ALERT["type"] == "cancelled":
-            message = (f"❌ **Cancelled train!**\n"
-                       f"The **{ALERT['scheduled']}** service ({ALERT['route_name']}) has been **CANCELLED**\n"
-                       f"**Cause of Delay** {ALERT['reason']}")
 
-        elif ALERT["type"] == "delayed":
-            delay_text = "Delayed indefinitely" if ALERT["is_indefinite"] else f"currently running {ALERT['delay_amount']} minutes late"
-
-            if ALERT['is_major'] and disruption_score >= 2: # Only alert if the score is equal or above two
-                if ALERT['from_st'] == "HMD" and ALERT['to_st'] == "MCB":
-                    severe_msg = "🛑 **SEVERE DELAYS REPORTED!** Do NOT travel. Complete work at home!"
-                elif ALERT['from_st'] == "MCB" and ALERT['to_st'] == "HMD":
-                    severe_msg = "🛑 **SEVERE DELAYS REPORTED!** GO HOME"
-                else:
-                    severe_msg = "🚨 **MULTIPLE ISSUES ACROSS THE NETWORK!!** Consider alternative transportation!"
-            else:
-                severe_msg = f"⚠️ **Reason cause** {ALERT['reason']}"
-
-            message = (
-                f"⚠️**Service alert!**\n"
-                f"The **{ALERT['scheduled']}** service ({ALERT['route_name']})\n"
-                f"is {delay_text}\n"
-                f"{severe_msg}")
-
-        send_discord_alert("trains", message)
+    for alert in pending_alerts:
+        alert_msg = format_alert_msg(alert, disruption_score)
+        send_discord_alert("trains", alert_msg)
         time.sleep(5)
 
-
-    # Save platform history
-    with open(PLATFORM_CACHE, "w") as f:
-        for sid, plat in new_history.items():
-            f.write(f"{sid}|{plat}\n")
-
-    # Save alert cache
-    with open(ALERT_CACHE, "w") as f:
-        f.write("\n".join(current_active_alerts))
-
-    commit_github(ALERT_CACHE, f"Update train cache - {len(current_active_alerts)} issues")
+    SAVE_platform_history(PLATFORM_CACHE, new_history)
+    SAVE_alert_cache(ALERT_CACHE, current_active_alerts)
 
 # Runs every 5 minutes
 if __name__ == "__main__":

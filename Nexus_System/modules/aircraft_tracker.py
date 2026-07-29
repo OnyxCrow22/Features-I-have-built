@@ -32,7 +32,82 @@ def current_location():
     except Exception as e:
         print(f"Geolocation failed: {e}")
         return 50.77, 0.28, "Eastbourne"
+    
+#--------------- LOAD WATCHLIST FROM JSON FILE --------------#
+def load_watchlist(watchlist_file):
+    try:
+        if os.path.exists(watchlist_file):
+            with open(watchlist_file, "r") as f:
+                watchlist_data = json.load(f)
+        else:
+            watchlist_data = {"registrations": [], "callsigns": []}
+    except Exception as e:
+        print(f"Failed to load watchlist file! {e}")
+        watchlist_data = {"registrations": [], "callsigns": []}
 
+    watch_regs = {reg.strip().upper() for reg in watchlist_data.get("registrations", [])}
+    watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
+
+    return watch_regs, watch_callsigns
+
+#--------------- LOAD CACHE ---------------#
+def load_cache(cached_file, expiry_amount):
+    seen_cache = {}
+    current_time = time.time()
+
+    if os.path.exists(cached_file):
+            with open(cached_file, "r") as f:
+                for line in f:
+                    line = line.strip()
+                    if "|" in line:
+                        ac_ICAO, ts = line.split("|")
+                        try:
+                            if current_time - float(ts) < expiry_amount:
+                                seen_cache[ac_ICAO.lower()] = float(ts)
+                        except ValueError:
+                            continue
+                    elif line:
+                        seen_cache[line.lower()] = current_time
+
+    return seen_cache
+
+#------------------------------------- SAVE CACHE ----------------------------#
+def save_cache(cache_file, seen_cache):
+        with open(cache_file, "w") as f:
+            for ac_ICAO, ts in seen_cache.items():
+                f.write(f"{ac_ICAO}|{ts}\n")
+
+#------------------------------------ EVALUATION OF AIRCRAFT -----------------#
+def evaluate_aircraft(flight, watch_regs, watch_callsigns):
+            callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get callsign
+            registration = flight.get('r', '').strip().upper() # Get registration
+            
+            # Match directly against registration, or partially check if any watched callsign is inside the flight callsign
+            is_watched = (
+                (registration and registration in watch_regs) or 
+                any(item in callsign for item in watch_callsigns)
+            )
+            is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
+
+            return (is_watched or is_uncommon), is_watched
+
+#------------------------------ DISCORD ALERT SYSTEM -----------------------#
+def alert_server(flight, distance, city_name, is_watched):
+    callsign = flight.get('flight', '').strip().upper() or "EMPTY"
+    registration = flight.get('r', '').strip().upper() or "Unknown"
+    aircraft_type = flight.get('t') or "Unknown"
+    ICAO24 = flight.get('hex', '').strip().lower()
+
+    source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
+    return (
+        f"**{source_label}**\n"
+        f"✈️ **Aircraft Callsign:** {callsign} \n"
+        f"📝 **Aircraft Registration: {registration}** | **Type:** {aircraft_type}\n"
+        f"🗺️ **Distance from {city_name}**: {distance:.1f} miles\n"
+        f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={ICAO24})" 
+    )
+
+#---------------------------- MAIN FUNCTION ----------------------#
 
 def check_local_airspace():
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -43,42 +118,12 @@ def check_local_airspace():
     CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
     RADIUS_MILES = 30 # 30 Miles
     RADIUS_NM = int(RADIUS_MILES * 0.868976) # Convert mile into Nautical Mile.
+    CACHE_EXPIRY_SECONDS = 10800 # Approximately three hours
 
-    # Load Watchlist from JSON
-    try:
-        if os.path.exists(WATCHLIST_FILE):
-            with open(WATCHLIST_FILE, "r") as f:
-                watchlist_data = json.load(f)
-        else:
-            watchlist_data = {"registrations": [], "callsigns": []}
-    except Exception as e:
-        print(f"Failed to load watchlist JSON: {e}")
-        watchlist_data = {"registrations": [], "callsigns": []}
-
-    # Normalize tracking terms to uppercase for reliable matching
-    watch_regs = {reg.strip().upper() for reg in watchlist_data.get("registrations", [])}
-    watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
+    watch_regs, watch_callsigns = load_watchlist(WATCHLIST_FILE) # Load the current watchlist
+    seen_cache = load_cache(AIRCRAFT_FILE, CACHE_EXPIRY_SECONDS)
 
     url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
-
-    currentTime = time.time()
-    CACHE_EXPIRY_SECONDS = 10800
-
-
-    seen_cache = {}
-    if os.path.exists(AIRCRAFT_FILE):
-            with open(AIRCRAFT_FILE, "r") as f:
-                for line in f:
-                    line = line.strip()
-                    if "|" in line:
-                        ac_ICAO, ts = line.split("|")
-                        try:
-                            if currentTime - float(ts) < CACHE_EXPIRY_SECONDS:
-                                seen_cache[ac_ICAO.lower()] = float(ts)
-                        except ValueError:
-                            continue
-                    elif line:
-                        seen_cache[line.lower()] = currentTime
 
     try:
         response = requests.get(url, timeout=30)
@@ -91,10 +136,10 @@ def check_local_airspace():
             
         new_alert = [] # New list for alerts
         processed_aircraft = set() # The aircraft currently being tracked by the Discord bot
+        current_time = time.time()
 
         for flight in aircraft_list:
             icao24 = flight.get('hex', '').strip().lower() # Get the ICAO code
-            callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get the callsign
             on_ground = flight.get('ground', False) # Check ground status
             lat = flight.get('lat') 
             lon = flight.get('lon')
@@ -108,35 +153,16 @@ def check_local_airspace():
             dist = haversine(CURRENT_LAT, CURRENT_LON, lat, lon)
             if dist > RADIUS_MILES:
                 continue # Too far away from the current location
-            
-            registration = flight.get('r', '').strip().upper() # Get registration
-            
-            # Match directly against registration, or partially check if any watched callsign is inside the flight callsign
-            is_watched = (
-                (registration and registration in watch_regs) or 
-                any(item in callsign for item in watch_callsigns)
-            )
-            is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
 
-            if is_watched or is_uncommon:
+            is_matched, is_watched = evaluate_aircraft(flight, watch_regs, watch_callsigns) # Use the aircraft evaluation method
 
-                processed_aircraft.add(icao24) # Mark aircraft as tracked
+            if is_matched:
+                processed_aircraft.add(icao24)
 
                 if icao24 not in seen_cache:
-                    source_label = "🚨 WATCHLIST MATCH!" if is_watched else "😃 UNCOMMON AIRCRAFT FOUND!"
-
-                    registration_label = registration if registration else "Unknown"
-                    aircraft_type = flight.get('t') or "Unknown"
-
-                    message = (
-                        f"**{source_label}**\n"
-                        f"✈️ **Aircraft Callsign:** {callsign} \n"
-                        f"📝 **Aircraft Registration: {registration_label}** | **Type:** {aircraft_type}\n"
-                        f"🗺️ **Distance from {CURRENT_CITY}**: {dist:.1f} miles\n"
-                        f"📍 **Radar Tracker**: [ADS-B Exchange](https://globe.adsbexchange.com/?icao={icao24})" 
-                    )
-                    new_alert.append(message)
-                    seen_cache[icao24] = currentTime # Store in the cache
+                    alert_msg = alert_server(flight, dist, CURRENT_CITY, is_watched)
+                    new_alert.append(alert_msg)
+                    seen_cache[icao24] = current_time
 
         # Only send alert if a new aircraft is found
         if new_alert:
@@ -145,9 +171,7 @@ def check_local_airspace():
                 if i < len(new_alert) - 1:
                     time.sleep(5)
 
-        with open(AIRCRAFT_FILE, "w") as f:
-            for ac_ICAO, ts in seen_cache.items():
-                f.write(f"{ac_ICAO}|{ts}\n")
+        save_cache(AIRCRAFT_FILE, seen_cache)
 
         if new_alert:
             commit_github(AIRCRAFT_FILE, "Update aircraft cache")
@@ -158,6 +182,5 @@ def check_local_airspace():
         print(f"Unexpected error: {type(e).__name__}: {e}")
 
 if __name__ == "__main__":
-    CURRENT_LAT, CURRENT_LON, CURRENT_CITY = current_location()
     print("Scanning EWS area for aircraft...")
     check_local_airspace()
