@@ -45,7 +45,7 @@ def load_watchlist(watchlist_file):
         print(f"Failed to load watchlist file! {e}")
         watchlist_data = {"registrations": [], "callsigns": []}
 
-    watch_regs = {reg.strip().upper() for reg in watchlist_data.get("registrations", [])}
+    watch_regs = {reg.replace("-", "").strip().upper() for reg in watchlist_data.get("registrations", [])}
     watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
 
     return watch_regs, watch_callsigns
@@ -80,7 +80,8 @@ def save_cache(cache_file, seen_cache):
 #------------------------------------ EVALUATION OF AIRCRAFT -----------------#
 def evaluate_aircraft(flight, watch_regs, watch_callsigns):
             callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get callsign
-            registration = flight.get('r', '').strip().upper() # Get registration
+            raw_reg = flight.get('r', '').strip().upper()
+            registration = raw_reg.replace("-", "")
             
             # Match directly against registration, or partially check if any watched callsign is inside the flight callsign
             is_watched = (
