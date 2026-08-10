@@ -1,6 +1,4 @@
 [
   {"from": "HMD", "to": "MCB", "name": "Hampden Park to Moulsecoomb"},
-  {"from": "MCB", "to": "HMD", "name": "Moulsecoomb to Hampden Park"},
-  {"from": "HMD", "to": "SLQ", "name": "Hampden Park to St Leonards Warrior Square"},
-  {"from": "SLQ", "to": "HMD", "name": "St Leonards Warrior Square to Hampden Park."}
+  {"from": "MCB", "to": "HMD", "name": "Moulsecoomb to Hampden Park"}
 ]
