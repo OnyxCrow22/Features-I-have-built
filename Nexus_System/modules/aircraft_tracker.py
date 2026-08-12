@@ -8,6 +8,7 @@ import json
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from shared_utility import send_discord_alert, commit_github
+from db_manager import aircraft_event
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 3958.8 # Earth's radius in miles
@@ -28,7 +29,7 @@ def current_location():
     
     try:
         resp = requests.get('http://ip-api.com/json/', timeout=3).json()
-        return resp['lat'], resp['lon'], resp['city']
+        return round(resp['lat'], 2), round(resp['lon'], 2), resp['city']
     except Exception as e:
         print(f"Geolocation failed: {e}")
         return 50.77, 0.28, "Eastbourne"
@@ -47,8 +48,9 @@ def load_watchlist(watchlist_file):
 
     watch_regs = {reg.replace("-", "").strip().upper() for reg in watchlist_data.get("registrations", [])}
     watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
+    watch_hexes = {hex_code.strip().lower() for hex_code in watchlist_data.get("hexes", [])}
 
-    return watch_regs, watch_callsigns
+    return watch_regs, watch_callsigns, watch_hexes
 
 #--------------- LOAD CACHE ---------------#
 def load_cache(cached_file, expiry_amount):
@@ -78,14 +80,16 @@ def save_cache(cache_file, seen_cache):
                 f.write(f"{ac_ICAO}|{ts}\n")
 
 #------------------------------------ EVALUATION OF AIRCRAFT -----------------#
-def evaluate_aircraft(flight, watch_regs, watch_callsigns):
+def evaluate_aircraft(flight, watch_regs, watch_callsigns, watch_hexes):
             callsign = flight.get('flight', '').strip().upper() or "EMPTY" # Get callsign
             raw_reg = flight.get('r', '').strip().upper()
             registration = raw_reg.replace("-", "")
+            icao24 = flight.get('hex', '').strip().lower()
             
             # Match directly against registration, or partially check if any watched callsign is inside the flight callsign
             is_watched = (
-                (registration and registration in watch_regs) or 
+                (registration and registration in watch_regs) or
+                (icao24 and icao24 in watch_hexes) or
                 any(item in callsign for item in watch_callsigns)
             )
             is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
@@ -121,7 +125,7 @@ def check_local_airspace():
     RADIUS_NM = int(RADIUS_MILES * 0.868976) # Convert mile into Nautical Mile.
     CACHE_EXPIRY_SECONDS = 10800 # Approximately three hours
 
-    watch_regs, watch_callsigns = load_watchlist(WATCHLIST_FILE) # Load the current watchlist
+    watch_regs, watch_callsigns, watch_hexes = load_watchlist(WATCHLIST_FILE) # Load the current watchlist
     seen_cache = load_cache(AIRCRAFT_FILE, CACHE_EXPIRY_SECONDS)
 
     url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
@@ -155,7 +159,7 @@ def check_local_airspace():
             if dist > RADIUS_MILES:
                 continue # Too far away from the current location
 
-            is_matched, is_watched = evaluate_aircraft(flight, watch_regs, watch_callsigns) # Use the aircraft evaluation method
+            is_matched, is_watched = evaluate_aircraft(flight, watch_regs, watch_callsigns, watch_hexes) # Use the aircraft evaluation method
 
             if is_matched:
                 processed_aircraft.add(icao24)
@@ -164,6 +168,8 @@ def check_local_airspace():
                     alert_msg = alert_server(flight, dist, CURRENT_CITY, is_watched)
                     new_alert.append(alert_msg)
                     seen_cache[icao24] = current_time
+
+                    aircraft_event(flight, dist, is_watched) # Log the aircraft event to the database
 
         # Only send alert if a new aircraft is found
         if new_alert:
