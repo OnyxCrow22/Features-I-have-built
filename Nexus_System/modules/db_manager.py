@@ -15,6 +15,8 @@ def initialise_database():
             callsign TEXT,
             registration TEXT,
             aircraft_type TEXT,
+            lat REAL,
+            lon REAL,
             distance_miles REAL,
             is_watchlist INTEGER,
             timestamp REAL,
@@ -42,6 +44,8 @@ def aircraft_event(flight, distance, is_watched):
     callsign = flight.get('flight', '').strip().upper() or "EMPTY"
     raw_registration = flight.get('r', '').strip().upper() or "UNKNOWN"
     aircraft_type = flight.get('t', '').strip().upper() or "UNKNOWN"
+    lat = flight.get('lat')
+    lon = flight.get('lon')
     now = time.time()
     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(now))
     
@@ -50,9 +54,9 @@ def aircraft_event(flight, distance, is_watched):
 
     cursor.execute('''
         INSERT OR REPLACE INTO aircraft_cache (
-            icao24, callsign, registration, aircraft_type, distance_miles, is_watchlist, timestamp, formatted_time
+            icao24, callsign, registration, aircraft_type, lat, lon, distance_miles, is_watchlist, timestamp, formatted_time
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (icao24, callsign, raw_registration, aircraft_type, round(distance, 1), 1 if is_watched else 0, now, formatted_time))
+    ''', (icao24, callsign, raw_registration, aircraft_type, lat, lon, round(distance, 1), 1 if is_watched else 0, now, formatted_time))
 
     connect.commit()
     connect.close()

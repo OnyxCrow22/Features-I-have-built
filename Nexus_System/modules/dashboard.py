@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import pydeck as pdk
 import sqlite3
 import json
 import os
@@ -138,3 +139,65 @@ with sidebar_col:
 
     if st.button("🔄 Refresh Data"):
         st.rerun()
+
+    # --- FETCH DATA WITH LAT/LON ---
+def load_map_data():
+    conn = get_database_connection()
+    query = """
+        SELECT 
+            callsign,
+            registration,
+            aircraft_type,
+            lat,
+            lon,
+            is_watchlist
+        FROM aircraft_cache
+        WHERE lat IS NOT NULL AND lon IS NOT NULL
+        ORDER BY timestamp DESC
+    """
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
+
+# --- RENDER MAP ---
+df_map = load_map_data()
+
+if not df_map.empty:
+    st.subheader("🗺️ Live Airspace Map (UK)")
+
+    # Define color layers (Red for Watchlist, Blue for Uncommon)
+    df_map['color_r'] = df_map['is_watchlist'].apply(lambda x: 255 if x else 0)
+    df_map['color_g'] = df_map['is_watchlist'].apply(lambda x: 0 if x else 128)
+    df_map['color_b'] = df_map['is_watchlist'].apply(lambda x: 0 if x else 255)
+
+    # PyDeck Scatterplot Layer
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=df_map,
+        get_position=["lon", "lat"],
+        get_color=["color_r", "color_g", "color_b", 200],
+        get_radius=3000,  # Radius in meters
+        pickable=True,
+    )
+
+    # Set camera view over Eastbourne / South UK
+    view_state = pdk.ViewState(
+        latitude=50.77,
+        longitude=0.28,
+        zoom=8,
+        pitch=0
+    )
+
+    # Render PyDeck Map with tooltips
+    st.pydeck_chart(
+        pdk.Deck(
+            layers=[layer],
+            initial_view_state=view_state,
+            tooltip={
+                "html": "<b>Callsign:</b> {callsign}<br/><b>Reg:</b> {registration}<br/><b>Type:</b> {aircraft_type}",
+                "style": {"backgroundColor": "steelblue", "color": "white"}
+            }
+        )
+    )
+else:
+    st.info("No location coordinates recorded yet.")
