@@ -47,8 +47,8 @@ def load_watchlist(watchlist_file):
         watchlist_data = {"registrations": [], "callsigns": []}
 
     watch_regs = {reg.replace("-", "").strip().upper() for reg in watchlist_data.get("registrations", [])}
-    watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", [])]
-    watch_hexes = {hex_code.strip().lower() for hex_code in watchlist_data.get("hexes", [])}
+    watch_callsigns = [call.strip().upper() for call in watchlist_data.get("callsigns", []) if call.strip()]
+    watch_hexes = {hex_code.strip().lower() for hex_code in (watchlist_data.get("hexes") or [])}
 
     return watch_regs, watch_callsigns, watch_hexes
 
@@ -92,7 +92,7 @@ def evaluate_aircraft(flight, watch_regs, watch_callsigns, watch_hexes):
                 (icao24 and icao24 in watch_hexes) or
                 any(item in callsign for item in watch_callsigns)
             )
-            is_uncommon = "RESCUE" in callsign or flight.get('type') == "MILT"
+            is_uncommon = "RESCUE" in callsign or flight.get('dbFlags') == 1
 
             return (is_watched or is_uncommon), is_watched
 
