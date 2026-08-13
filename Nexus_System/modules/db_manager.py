@@ -55,7 +55,7 @@ def aircraft_event(flight, distance, is_watched):
     cursor.execute('''
         INSERT OR REPLACE INTO aircraft_cache (
             icao24, callsign, registration, aircraft_type, lat, lon, distance_miles, is_watchlist, timestamp, formatted_time
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (icao24, callsign, raw_registration, aircraft_type, lat, lon, round(distance, 1), 1 if is_watched else 0, now, formatted_time))
 
     connect.commit()
