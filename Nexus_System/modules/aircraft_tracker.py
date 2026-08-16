@@ -130,7 +130,7 @@ def check_local_airspace():
     seen_cache = load_cache(AIRCRAFT_FILE, CACHE_EXPIRY_SECONDS)
 
 
-    url = f"https://api.airplanes.live/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
+    url = f"https://api.airplanes.live/v2/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
     request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
 
     try:
