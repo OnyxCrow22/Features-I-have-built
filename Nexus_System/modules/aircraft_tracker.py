@@ -4,6 +4,7 @@ import sys
 import time
 import math
 import json
+from urllib.request import Request, urlopen
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -128,12 +129,14 @@ def check_local_airspace():
     watch_regs, watch_callsigns, watch_hexes = load_watchlist(WATCHLIST_FILE) # Load the current watchlist
     seen_cache = load_cache(AIRCRAFT_FILE, CACHE_EXPIRY_SECONDS)
 
-    url = f"https://api.airplanes.live/v2/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
+
+    url = f"https://api.airplanes.live/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
+    request = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
 
     try:
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        aircraft_list = response.json().get('ac', [])
+        with urlopen(request, timeout=30) as response:
+            data = json.loads(response.read().decode('utf-8'))
+            aircraft_list = data.get('ac', [])
         
         if not aircraft_list:
             print(f"Target airspace is currently void of targeted aircraft at the moment.")
