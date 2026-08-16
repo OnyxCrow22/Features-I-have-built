@@ -128,7 +128,7 @@ def check_local_airspace():
     watch_regs, watch_callsigns, watch_hexes = load_watchlist(WATCHLIST_FILE) # Load the current watchlist
     seen_cache = load_cache(AIRCRAFT_FILE, CACHE_EXPIRY_SECONDS)
 
-    url = f"https://api.adsb.lol/v2/point/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
+    url = f"https://api.airplanes.live/v2/{CURRENT_LAT}/{CURRENT_LON}/{RADIUS_NM}"
 
     try:
         response = requests.get(url, timeout=30)
