@@ -20,20 +20,49 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 def current_location():
-    # Check for manual override first
-    if os.getenv('OVERRIDE_LAT') is not None:
-        return float(os.getenv('OVERRIDE_LAT')), float(os.getenv('OVERRIDE_LON')), os.getenv('OVERRIDE_CITY', 'Custom')
-    
-    if os.getenv('GITHUB_ACTIONS') == 'true':
-        print("Running on GitHub Actions - forcing Eastbourne coords")
-        return 50.77, 0.28, "Eastbourne"
-    
+  if os.getenv('OVERRIDE_LAT') is not None and os.getenv(
+      'OVERRIDE_LON'
+  ) is not None:
     try:
-        resp = requests.get('http://ip-api.com/json/', timeout=3).json()
-        return float(resp['lat']), float(resp['lon']), resp['city']
+      lat = float(os.getenv('OVERRIDE_LAT'))
+      lon = float(os.getenv('OVERRIDE_LON'))
+
+      # Automatically figure out the real city/town name from coordinates
+      geo_url = (
+          f'https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}'
+      )
+      headers = {'User-Agent': 'AircraftTrackerScript/1.0'}
+      resp = requests.get(geo_url, headers=headers, timeout=3).json()
+      address = resp.get('address', {})
+      
+      city_name = (
+          address.get('city')
+          or address.get('town')
+          or address.get('village')
+          or address.get('suburb')
+          or address.get('county')
+          or 'Custom Location'
+      )
+      return lat, lon, city_name
     except Exception as e:
-        print(f"Geolocation failed: {e}")
-        return 50.77, 0.28, "Eastbourne"
+      print(f'Reverse geocoding failed: {e}')
+      # Fallback if lookup fails
+      return (
+          float(os.getenv('OVERRIDE_LAT')),
+          float(os.getenv('OVERRIDE_LON')),
+          os.getenv('OVERRIDE_CITY', 'Custom'),
+      )
+
+  if os.getenv('GITHUB_ACTIONS') == 'true':
+    print('Running on GitHub Actions - forcing Eastbourne coords')
+    return 50.77, 0.28, 'Eastbourne'
+
+  try:
+    resp = requests.get('http://ip-api.com/json/', timeout=3).json()
+    return float(resp['lat']), float(resp['lon']), resp['city']
+  except Exception as e:
+    print(f'Geolocation failed: {e}')
+    return 50.77, 0.28, 'Eastbourne'
     
 #--------------- LOAD WATCHLIST FROM JSON FILE --------------#
 def load_watchlist(watchlist_file):
