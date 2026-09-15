@@ -60,7 +60,8 @@ def evaluate_article(pub_date_text, max_hours=2):
         return True
 
 #------------------------- RSS FEED PROPAGATOR ---------------------#
-def rss_propagator(source_name, rss_url, seen_links, BLOCKLIST):
+def rss_propagator(source_name, rss_url, seen_links, BLOCKLIST, PREFERRED_NEWS_SOURCES):
+
     new_stories = []
     print(f"Checking {source_name}")
     try:
@@ -73,6 +74,17 @@ def rss_propagator(source_name, rss_url, seen_links, BLOCKLIST):
                         link = item.find("link").text if item.find("link") is not None else ""
                         description = item.find("description").text if item.find("description") is not None else ""
                         pub_date_text = item.find("pubDate").text if item.find("pubDate") is not None else None
+
+                        source_element = item.find("source")
+                        article_source = (
+                            source_element.text.strip()
+                            if source_element is not None and source_element.text
+                            else ""
+                        )
+
+                        if article_source not in PREFERRED_NEWS_SOURCES:
+                            print(f"Skipping {article_source}, not in whitelist")
+                            continue
     
                         if not link:
                             continue
@@ -121,12 +133,19 @@ def check_headlines():
         "Local News": "https://news.google.com/rss/topics/CAAqHAgKIhZDQklTQ2pvSWJHOWpZV3hmZGpJb0FBUAE/sections/CAQiUENCSVNOam9JYkc5allXeGZkakpDRUd4dlkyRnNYM1l5WDNObFkzUnBiMjV5Q3hJSkwyMHZNREUzTkhGdGVnc0tDUzl0THpBeE56UnhiU2dBKjEIACotCAoiJ0NCSVNGem9JYkc5allXeGZkako2Q3dvSkwyMHZNREUzTkhGdEtBQVABUAE?hl=en-GB&gl=GB&ceid=GB%3Aen"
     }
 
+    PREFERRED_NEWS_SOURCES = [
+    "BBC News",
+    "Sky News",
+    "The Guardian",
+    "The Times",
+    "The i Newspaper",]
+
     try:
         seen_links = load_cache(CACHED_FILE)
         all_new_stories = []
 
         for source_name, rss_url in NEWS_SOURCE.items():
-            stories = rss_propagator(source_name, rss_url, seen_links, BLOCKLIST)
+            stories = rss_propagator(source_name, rss_url, seen_links, BLOCKLIST, PREFERRED_NEWS_SOURCES)
             all_new_stories.extend(stories)
 
         if all_new_stories:
