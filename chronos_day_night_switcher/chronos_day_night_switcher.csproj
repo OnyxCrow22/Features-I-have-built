@@ -3,10 +3,11 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
-    <RootNamespace>Chronos_Day_and_Night_Switcher</RootNamespace>
+    <RootNamespace>chronos_day_night_switcher</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Assets\WASIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

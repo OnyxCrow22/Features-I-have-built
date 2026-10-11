@@ -1,16 +1,19 @@
-﻿using System;
+﻿using H.NotifyIcon;
+using Innovative.SolarCalculator;
+using Microsoft.Toolkit.Uwp.Notifications;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.IO;
-using System.Runtime.InteropServices;
-using Microsoft.Win32;
-using System.Net.Http;
-using System.Text.Json;
-using Innovative.SolarCalculator;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Toolkit.Uwp.Notifications;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using Windows.UI.Notifications;
 
 namespace Chronos_Day_and_Night_Switcher
@@ -21,14 +24,40 @@ namespace Chronos_Day_and_Night_Switcher
         private readonly ApplicationSettings _settings = new();
         private readonly ThemeScheduler _scheduler;
 
+        private TaskbarIcon? _trayicon;
+
         public MainWindow()
         {
             InitializeComponent();
-
-            this.Hide();
+            InitializeTrayIcon();
 
             _scheduler = new ThemeScheduler(_settings);
             _ = _scheduler.StartAsync();
+        }
+
+        private void InitializeTrayIcon()
+        {
+            try
+            {
+
+                _trayicon = new TaskbarIcon()
+                {
+                    IconSource = new BitmapImage(
+                        new Uri("pack://application:,,,/Assets/WASIcon.ico")),
+                    ToolTipText = "Chronos Day and Night Switcher",
+                    ContextMenu = (ContextMenu)FindResource("TrayContextMenu")
+                };
+
+                _trayicon.ForceCreate(enablesEfficiencyMode: false);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Tray Icon Initialisation Failed",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            }
         }
 
         public void OnAutomaticResume(object sendMessage, RoutedEventArgs clicked)
@@ -230,17 +259,18 @@ namespace Chronos_Day_and_Night_Switcher
     /// </summary>
     public static class SolarEngine
     {
-        public static (DateTime Sunrise, DateTime sunset) GetSunTime(double latitude, double longitude, DateTime? targetDate = null)
+        public static (DateTime Sunrise, DateTime Sunset) GetSunTime(
+            double latitude,
+            double longitude,
+            DateTime? targetDate = null)
         {
-            DateTime currentDate = targetDate?.Date ?? DateTime.Today; // Get today's date.
+            DateTime currentDate = targetDate?.Date ?? DateTime.Today;
 
             SolarTimes solTimes = new(currentDate, latitude, longitude);
 
-            DateTime sunriseTime = solTimes.Sunrise.ToLocalTime(); // Find the local time of sunrise.
-            DateTime sunsetTime = solTimes.Sunset.ToLocalTime(); // Find the local time of sunset.
-
-            if (sunsetTime < sunriseTime)
-                sunsetTime = sunsetTime.AddDays(1); // One day added to the count.
+            // The calculator returns local-time DateTime values.
+            DateTime sunriseTime = solTimes.Sunrise;
+            DateTime sunsetTime = solTimes.Sunset;
 
             return (sunriseTime, sunsetTime);
         }
@@ -322,6 +352,7 @@ namespace Chronos_Day_and_Night_Switcher
             var (latitude, longitude) = _cachedLocation.Value;
 
             var (sunrise, sunset) = SolarEngine.GetSunTime(latitude, longitude);
+
             DateTime currentTime = DateTime.Now;
 
             bool shouldBeDark = currentTime < sunrise || currentTime > sunset;
